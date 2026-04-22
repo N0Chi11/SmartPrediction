@@ -1,0 +1,2307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>慧估 · 上市公司盈利能力评估平台</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6fb;--bg2:#edf0f7;--sur:#fff;--sur2:#f8f9fc;
+  --bdr:#e2e6f0;--bdr2:#d0d6e8;
+  --ink:#1a2340;--ink2:#3d4f72;--sub:#7a89aa;--dim:#b0bdd4;
+  --blue:#2563eb;--blt:#eff4ff;--bmd:#bfcffe;
+  --gold:#b45309;--glt:#fef3c7;--gmd:#fcd34d;
+  --teal:#0d9488;--rose:#e11d48;--rlt:#fff1f2;
+  --green:#16a34a;--grlt:#f0fdf4;
+  --r:12px;
+  --sh:0 1px 4px rgba(26,35,64,.07),0 4px 16px rgba(26,35,64,.05);
+  --shm:0 4px 12px rgba(26,35,64,.10),0 12px 40px rgba(26,35,64,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[v-cloak]{display:none}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+/* ─ Header ─ */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 36px;height:60px;background:var(--sur);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(26,35,64,.06)}
+.logo{display:flex;align-items:center;gap:10px}
+.lbox{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#1d4ed8);display:flex;align-items:center;justify-content:center;font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#fff;box-shadow:0 3px 10px rgba(37,99,235,.35)}
+.lname{font-family:'Noto Serif SC',serif;font-size:18px;font-weight:700;color:var(--ink)}
+.lsub{font-size:11px;color:var(--sub);letter-spacing:.04em}
+.chip{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--blt);border:1px solid var(--bmd);color:var(--blue);font-family:'JetBrains Mono',monospace}
+.chip.g{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
+.hbtn{background:none;border:1px solid var(--bdr2);color:var(--ink2);padding:6px 14px;border-radius:7px;font-size:13px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:.15s}
+.hbtn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ─ Hero ─ */
+.hero{text-align:center;padding:52px 24px 44px;background:linear-gradient(180deg,var(--sur) 0%,var(--bg) 100%)}
+.hbadge{display:inline-flex;align-items:center;gap:7px;background:var(--blt);border:1px solid var(--bmd);padding:5px 14px;border-radius:20px;font-size:12px;color:var(--blue);letter-spacing:.04em;margin-bottom:20px}
+.hbadge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--blue);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.hero h1{font-family:'Noto Serif SC',serif;font-size:clamp(26px,3.8vw,44px);font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--blue)}
+.hero p{font-size:15px;color:var(--sub);max-width:540px;margin:0 auto 36px;line-height:1.75}
+.hstats{display:flex;justify-content:center;gap:48px;flex-wrap:wrap}
+.hstat .n{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:500;color:var(--blue)}
+.hstat .l{font-size:12px;color:var(--sub);margin-top:4px}
+
+/* ─ Layout ─ */
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px 64px}
+.sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.sec-step{width:26px;height:26px;border-radius:7px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.sec-hdr h2{font-size:17px;color:var(--ink);font-weight:600}
+.sdiv{flex:1;height:1px;background:var(--bdr)}
+.snote{font-size:12px;color:var(--sub)}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:960px){.g2,.g3{grid-template-columns:1fr}}
+
+/* ─ Upload ─ */
+.upbox{border:2px dashed var(--bdr2);border-radius:10px;padding:48px 24px;text-align:center;cursor:pointer;transition:.2s;background:var(--sur2)}
+.upbox:hover,.upbox.drag{border-color:var(--blue);background:var(--blt)}
+.uico{width:56px;height:56px;border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;background:var(--blt);border:1px solid var(--bmd)}
+.uptit{font-size:16px;color:var(--ink);margin-bottom:6px}
+.upsub{font-size:13px;color:var(--sub)}
+.upok .uico{background:var(--grlt);border-color:#bbf7d0}
+.upok .uptit{color:#16a34a}
+
+/* ─ Indicator list ─ */
+.iitem{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:8px;background:var(--sur2);border:1px solid var(--bdr)}
+.inum{width:20px;height:20px;border-radius:5px;flex-shrink:0;background:var(--glt);border:1px solid var(--gmd);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);font-family:'JetBrains Mono',monospace}
+.iname{font-size:13px;color:var(--ink)}
+.idesc{font-size:11px;color:var(--sub);margin-top:2px}
+
+/* ─ Year selector ─ */
+.yrsel{display:flex;gap:8px;flex-wrap:wrap}
+.yrbtn{padding:8px 16px;border-radius:8px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:13px;color:var(--ink2);cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:.15s}
+.yrbtn:hover{border-color:var(--blue);color:var(--blue)}
+.yrbtn.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+
+/* ─ Progress ─ */
+.pbwrap{background:var(--bg2);border-radius:99px;overflow:hidden}
+.pbfill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),#818cf8,var(--teal));transition:width .4s cubic-bezier(.4,0,.2,1)}
+.astep{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--sur2);border:1px solid var(--bdr);border-radius:9px;transition:.3s}
+.astep.done{border-color:#bbf7d0;background:var(--grlt)}
+.astep.act{border-color:var(--bmd);background:var(--blt)}
+.sico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.sico.idle{background:var(--bg2);color:var(--sub)}
+.sico.done{background:#16a34a;color:#fff}
+.sico.act{background:var(--blue);color:#fff;animation:pls 1.2s infinite}
+@keyframes pls{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.4)}50%{box-shadow:0 0 0 7px rgba(37,99,235,0)}}
+
+/* ─ Buttons ─ */
+.btnp{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:13px 36px;background:var(--blue);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:500;cursor:pointer;font-family:'Noto Sans SC',sans-serif;box-shadow:0 4px 16px rgba(37,99,235,.28);transition:.2s}
+.btnp:hover:not(:disabled){background:#1d4ed8;box-shadow:0 6px 22px rgba(37,99,235,.38);transform:translateY(-1px)}
+.btnp:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btng{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:var(--sur);border:1px solid var(--bdr2);border-radius:7px;color:var(--ink2);font-size:13px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:.15s}
+
+/* ─ Stage switcher (行业选优 / 公司预测) ─ */
+.stg{display:flex;gap:12px;margin-bottom:28px;padding:6px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;box-shadow:var(--sh)}
+.stgbtn{flex:1;padding:14px 18px;border:none;background:transparent;border-radius:9px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;font-size:13px;color:var(--sub);display:flex;align-items:center;gap:12px;transition:.2s;text-align:left}
+.stgbtn:hover:not(.on):not(:disabled){background:var(--sur2);color:var(--ink2)}
+.stgbtn.on{background:linear-gradient(135deg,var(--blue),#4f6ef7);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.28)}
+.stgbtn.on .stgn{background:rgba(255,255,255,.25);color:#fff}
+.stgbtn:disabled{opacity:.4;cursor:not-allowed}
+.stgn{width:28px;height:28px;border-radius:8px;background:var(--blt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.stgl{display:flex;flex-direction:column;min-width:0}
+.stgt{font-size:14px;font-weight:600;color:inherit}
+.stgd{font-size:11px;opacity:.85;margin-top:2px}
+
+/* ─ Leaderboard ─ */
+.lbtbl{width:100%;border-collapse:collapse;font-size:13px}
+.lbtbl th{text-align:left;padding:11px 12px;background:var(--sur2);color:var(--sub);font-weight:500;font-size:11px;letter-spacing:.06em;border-bottom:1px solid var(--bdr);text-transform:uppercase}
+.lbtbl td{padding:13px 12px;border-bottom:1px solid var(--bdr);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px}
+.lbtbl tr:hover td{background:var(--sur2)}
+.lbrank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg2);color:var(--sub);font-weight:700;font-size:11px}
+.lbrank.r1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff}
+.lbrank.r2{background:linear-gradient(135deg,#cbd5e1,#94a3b8);color:#fff}
+.lbrank.r3{background:linear-gradient(135deg,#fb923c,#ea580c);color:#fff}
+.mfam{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;letter-spacing:.03em;font-family:'Noto Sans SC',sans-serif}
+.mfam.boosting{background:#fef3c7;color:#b45309}
+.mfam.bagging{background:#dcfce7;color:#15803d}
+.mfam.linear{background:#dbeafe;color:#1e40af}
+.lbwin{display:inline-flex;align-items:center;gap:6px}
+.winbar{height:6px;border-radius:99px;background:var(--bg2);overflow:hidden;flex:1;min-width:60px;max-width:120px}
+.winfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:99px}
+
+/* ─ Best model mapping chips ─ */
+.bm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.bm-chip{background:var(--sur2);border:1px solid var(--bdr);border-radius:9px;padding:12px 14px;transition:.15s}
+.bm-chip:hover{border-color:var(--bmd);box-shadow:0 2px 8px rgba(37,99,235,.08)}
+.bm-ind{font-size:12px;color:var(--sub);margin-bottom:6px}
+.bm-mn{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+.bm-mn::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.bm-mse{font-size:11px;color:var(--sub);font-family:'JetBrains Mono',monospace;margin-top:4px}
+
+/* ─ Summary stat strip ─ */
+.sumstat{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:760px){.sumstat{grid-template-columns:repeat(2,1fr)}}
+.sumc{padding:16px;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;box-shadow:var(--sh)}
+.sumc .lbl{font-size:11px;color:var(--sub);letter-spacing:.05em}
+.sumc .val{font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--ink);font-weight:500;margin-top:6px}
+.sumc .sub{font-size:11px;color:var(--sub);margin-top:4px}
+
+/* ─ Evaluation status card ─ */
+.eval-done{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;gap:16px}
+.eval-done .eico{width:46px;height:46px;border-radius:12px;background:#16a34a;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.eval-done .etxt{flex:1}
+.eval-done .ttl{font-size:14px;font-weight:600;color:#14532d}
+.eval-done .sub{font-size:12px;color:#15803d;margin-top:3px}
+
+/* ─ K-fold selector ─ */
+.kfsel{display:flex;gap:8px;flex-wrap:wrap}
+.kfbtn{padding:7px 14px;border-radius:7px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:12px;color:var(--ink2);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.15s}
+.kfbtn:hover{border-color:var(--blue);color:var(--blue)}
+.kfbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.btng:hover{border-color:var(--blue);color:var(--blue)}
+.btno{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:var(--glt);border:1px solid var(--gmd);border-radius:7px;color:var(--gold);font-size:13px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:.15s}
+.btno:hover{background:#fde68a}
+
+/* ─ Tabs ─ */
+.tabs{display:flex;gap:2px;margin-bottom:24px;background:var(--bg2);padding:4px;border-radius:9px;width:fit-content}
+.tbtn{padding:7px 18px;border-radius:7px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--sub);font-family:'Noto Sans SC',sans-serif;transition:.15s}
+.tbtn.on{background:var(--sur);color:var(--blue);box-shadow:var(--sh);font-weight:500}
+.tbtn:hover:not(.on){color:var(--ink2)}
+
+/* ─ Metric cards ─ */
+.mcard{padding:20px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);transition:.2s;box-shadow:var(--sh)}
+.mcard:hover{box-shadow:var(--shm);transform:translateY(-2px);border-color:var(--bmd)}
+.mccat{font-size:11px;color:var(--sub);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.mctag{font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--bdr2);color:var(--sub)}
+.mctag.b{border-color:var(--bmd);color:var(--blue);background:var(--blt)}
+.mctag.g{border-color:var(--gmd);color:var(--gold);background:var(--glt)}
+.mcrow{margin-bottom:14px}
+.mclbl{font-size:12px;color:var(--sub);margin-bottom:5px}
+.mcvr{display:flex;align-items:baseline;justify-content:space-between}
+.mcval{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;color:var(--ink)}
+.mcdel{font-size:12px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:2px}
+.mcdel.up{color:#e11d48}
+.mcdel.dn{color:#16a34a}
+.mcbar{margin-top:6px;height:3px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.mcfill{height:100%;border-radius:99px}
+
+/* ─ MSE badge ─ */
+.mse-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 8px;border-radius:5px;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;font-family:'JetBrains Mono',monospace}
+
+/* ─ Report ─ */
+.rblk{padding:18px 20px;background:var(--sur2);border:1px solid var(--bdr);border-radius:10px;margin-bottom:14px}
+.rblk h4{font-size:14px;color:var(--blue);margin-bottom:8px;display:flex;align-items:center;gap:7px;font-family:'Noto Serif SC',serif}
+.rblk p{font-size:13px;color:var(--ink2);line-height:1.8}
+
+/* ─ Table ─ */
+.dtbl{width:100%;border-collapse:collapse;font-size:13px}
+.dtbl th{padding:9px 12px;text-align:left;color:var(--sub);font-weight:500;border-bottom:1px solid var(--bdr);font-size:12px;white-space:nowrap}
+.dtbl td{padding:9px 12px;color:var(--ink2);border-bottom:1px solid var(--bdr);white-space:nowrap}
+.dtbl tbody tr:hover td{background:var(--bg2);color:var(--ink)}
+.dtbl td.fore{color:var(--blue);font-weight:500}
+.dtbl td.up{color:#e11d48}
+.dtbl td.dn{color:#16a34a}
+
+/* ─ DuPont ─ */
+.dpnode{background:var(--sur);border:1.5px solid var(--bdr2);border-radius:9px;padding:12px 16px;text-align:center}
+.dpnode.root{border-color:var(--blue);background:var(--blt)}
+.dpnode.lv2{border-color:#a5b4fc;background:#f5f3ff}
+.dplbl{font-size:11px;color:var(--sub);margin-bottom:4px}
+.dpval{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:var(--ink)}
+
+/* ─ Validation ─ */
+.vok{background:var(--grlt);border:1px solid #bbf7d0;border-radius:9px;padding:12px 14px}
+.verr{background:var(--rlt);border:1px solid #fecdd3;border-radius:9px;padding:12px 14px}
+
+/* ─ Error banner ─ */
+.errbanner{background:var(--rlt);border:1px solid #fecdd3;border-radius:9px;padding:16px 20px;margin-bottom:20px;font-size:14px;color:#9f1239}
+
+/* ─ Anim ─ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .4s ease both}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1.1s linear infinite}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:99px}
+.foot{text-align:center;padding:28px;color:var(--dim);font-size:12px;border-top:1px solid var(--bdr)}
+
+/* ─ 舆情分析 Stage C ─ */
+.sent-input{display:flex;gap:10px;align-items:stretch;margin-bottom:16px}
+.sent-input input{flex:1;padding:12px 16px;border:1.5px solid var(--bdr2);border-radius:9px;font-size:14px;font-family:'JetBrains Mono',monospace;background:var(--sur);transition:.15s}
+.sent-input input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.sent-input select{padding:12px 16px;border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;background:var(--sur);cursor:pointer;font-family:'Noto Sans SC',sans-serif}
+.postlist{max-height:380px;overflow-y:auto;border:1px solid var(--bdr);border-radius:9px;background:var(--sur2)}
+.postitem{padding:10px 14px;border-bottom:1px solid var(--bdr);display:flex;gap:12px;align-items:flex-start;transition:.12s}
+.postitem:last-child{border-bottom:none}
+.postitem:hover{background:var(--blt)}
+.postidx{flex:0 0 28px;width:28px;height:28px;border-radius:6px;background:var(--bg2);color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.postmain{flex:1;min-width:0}
+.posttitle{font-size:13px;color:var(--ink);line-height:1.5;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.posttitle a{color:inherit;text-decoration:none}
+.posttitle a:hover{color:var(--blue)}
+.postmeta{font-size:11px;color:var(--sub);display:flex;gap:12px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace}
+.sent-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;font-family:'Noto Sans SC',sans-serif}
+.sent-tag.positive{background:#dcfce7;color:#15803d}
+.sent-tag.negative{background:#fee2e2;color:#b91c1c}
+.sent-tag.neutral{background:#e0e7ff;color:#4338ca}
+
+.gauge-wrap{text-align:center;padding:20px 0}
+.gauge-val{font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:500;color:var(--blue);line-height:1}
+.gauge-lbl{font-size:12px;color:var(--sub);margin-top:8px;letter-spacing:.05em}
+.gauge-mood{display:inline-block;margin-top:10px;padding:5px 14px;border-radius:20px;background:var(--blt);border:1px solid var(--bmd);color:var(--blue);font-size:12px}
+
+.tagchip{display:inline-block;padding:5px 11px;margin:3px;background:var(--sur2);border:1px solid var(--bdr);border-radius:16px;font-size:12px;color:var(--ink2);transition:.15s}
+.tagchip.topic{background:var(--blt);border-color:var(--bmd);color:var(--blue)}
+.tagchip.event{background:#f5f3ff;border-color:#c4b5fd;color:#6d28d9}
+.tagchip.risk{background:var(--rlt);border-color:#fecdd3;color:#9f1239}
+.tagchip.opp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+
+.sent-section{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.sent-section h4{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sent-section h4 .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+
+/* ─ 浮动对话 ─ */
+.chat-fab{position:fixed;right:24px;bottom:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#4f6ef7);border:none;cursor:pointer;box-shadow:0 6px 24px rgba(37,99,235,.4);display:flex;align-items:center;justify-content:center;color:#fff;z-index:998;transition:.2s}
+.chat-fab:hover{transform:scale(1.08);box-shadow:0 8px 30px rgba(37,99,235,.55)}
+.chat-fab .dotnew{position:absolute;top:4px;right:4px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff;animation:blink 2s infinite}
+
+.chat-panel{position:fixed;right:24px;bottom:92px;width:400px;max-width:calc(100vw - 48px);height:600px;max-height:calc(100vh - 120px);background:var(--sur);border:1px solid var(--bdr);border-radius:16px;box-shadow:0 20px 60px rgba(26,35,64,.20),0 4px 16px rgba(26,35,64,.10);display:flex;flex-direction:column;z-index:999;overflow:hidden;animation:chatIn .28s cubic-bezier(.4,0,.2,1) both}
+@keyframes chatIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.chat-head{padding:14px 18px;background:linear-gradient(135deg,var(--blue),#4f6ef7);color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-head .ctitle{font-family:'Noto Serif SC',serif;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px}
+.chat-head .cavatar{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:13px;backdrop-filter:blur(10px)}
+.chat-head .cdesc{font-size:10px;opacity:.85;margin-top:1px;letter-spacing:.04em}
+.chat-head-btns{display:flex;gap:6px}
+.chat-head-btns button{background:rgba(255,255,255,.14);border:none;color:#fff;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.chat-head-btns button:hover{background:rgba(255,255,255,.28)}
+
+.chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--sur2)}
+.chat-msg{display:flex;gap:9px;max-width:88%;animation:msgIn .22s ease both}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.user{align-self:flex-end;flex-direction:row-reverse}
+.chat-msg.assistant{align-self:flex-start}
+.chat-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Noto Serif SC',serif}
+.chat-msg.assistant .chat-av{background:linear-gradient(135deg,var(--blue),#4f6ef7);color:#fff}
+.chat-msg.user .chat-av{background:var(--bg2);color:var(--ink2)}
+.chat-bubble{padding:10px 14px;border-radius:12px;font-size:13.5px;line-height:1.65;color:var(--ink);white-space:pre-wrap;word-wrap:break-word;max-width:100%}
+.chat-msg.assistant .chat-bubble{background:var(--sur);border:1px solid var(--bdr);border-top-left-radius:4px}
+.chat-msg.user .chat-bubble{background:var(--blue);color:#fff;border-top-right-radius:4px}
+.chat-msg.system-hint{align-self:center;max-width:96%}
+.chat-msg.system-hint .chat-bubble{background:var(--glt);border:1px solid var(--gmd);color:var(--gold);font-size:12px;padding:7px 12px;border-radius:10px;text-align:center}
+
+.chat-loading{display:inline-flex;gap:4px;padding:12px 14px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;border-top-left-radius:4px;align-items:center}
+.chat-loading span{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:dotPulse 1.2s ease-in-out infinite both}
+.chat-loading span:nth-child(1){animation-delay:-.32s}
+.chat-loading span:nth-child(2){animation-delay:-.16s}
+@keyframes dotPulse{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}
+
+.chat-quick{padding:6px 14px;background:var(--sur2);border-top:1px solid var(--bdr);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.chat-quick button{padding:5px 10px;border-radius:14px;background:var(--sur);border:1px solid var(--bdr);font-size:11px;color:var(--ink2);cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:.12s}
+.chat-quick button:hover{border-color:var(--blue);color:var(--blue);background:var(--blt)}
+
+.chat-foot{padding:12px;background:var(--sur);border-top:1px solid var(--bdr);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.chat-foot textarea{flex:1;border:1.5px solid var(--bdr2);border-radius:10px;padding:9px 12px;font-size:13px;font-family:'Noto Sans SC',sans-serif;resize:none;min-height:38px;max-height:110px;line-height:1.5;background:var(--sur2);color:var(--ink);transition:.15s}
+.chat-foot textarea:focus{outline:none;border-color:var(--blue);background:var(--sur);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.chat-send{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--blue);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.chat-send:hover:not(:disabled){background:#1d4ed8;transform:translateY(-1px)}
+.chat-send:disabled{opacity:.4;cursor:not-allowed}
+.chat-ctxbar{padding:6px 14px;font-size:10px;color:var(--sub);background:var(--bg2);border-top:1px solid var(--bdr);display:flex;align-items:center;gap:6px;flex-shrink:0}
+.chat-ctxbar .ctxdot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.chat-ctxbar .ctxdot.off{background:var(--dim)}
+
+/* ─ Stage D: 全页对话 ─ */
+.dchat-wrap{display:grid;grid-template-columns:300px 1fr;gap:20px;max-width:1280px;margin:0 auto}
+@media (max-width:960px){.dchat-wrap{grid-template-columns:1fr}}
+.dchat-side{display:flex;flex-direction:column;gap:14px}
+.dctx-card{background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:16px;box-shadow:var(--sh)}
+.dctx-card h4{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:.04em;display:flex;align-items:center;gap:6px;text-transform:uppercase}
+.dctx-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px dashed var(--bdr);font-size:12px}
+.dctx-item:last-child{border-bottom:none}
+.dctx-dot{flex-shrink:0;width:8px;height:8px;border-radius:50%;margin-top:5px}
+.dctx-dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.15)}
+.dctx-dot.off{background:var(--dim)}
+.dctx-label{color:var(--ink2);font-weight:500;flex:0 0 58px}
+.dctx-value{color:var(--ink);flex:1;word-break:break-all;line-height:1.5}
+.dctx-value.off{color:var(--dim)}
+
+.dchat-main{background:var(--sur);border:1px solid var(--bdr);border-radius:14px;box-shadow:var(--sh);display:flex;flex-direction:column;min-height:640px;height:calc(100vh - 280px);max-height:820px;overflow:hidden}
+.dchat-head{padding:14px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(to right,#f8faff,var(--sur))}
+.dchat-head .dtitle{display:flex;align-items:center;gap:12px}
+.dchat-head .davatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#4f6ef7);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif SC',serif;font-weight:700;font-size:14px;box-shadow:0 3px 10px rgba(37,99,235,.3)}
+.dchat-head .dname{font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:var(--ink)}
+.dchat-head .dmeta{font-size:11px;color:var(--sub);margin-top:2px;letter-spacing:.04em}
+.dchat-actions{display:flex;gap:8px}
+.dchat-actions button{padding:7px 13px;border-radius:8px;background:var(--sur2);border:1px solid var(--bdr);color:var(--ink2);font-size:12px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;display:flex;align-items:center;gap:5px;transition:.15s}
+.dchat-actions button:hover{border-color:var(--blue);color:var(--blue);background:var(--blt)}
+
+.dchat-body{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px;background:var(--sur2)}
+.dchat-body::-webkit-scrollbar{width:8px}
+.dchat-body::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+
+.dchat-welcome{margin:auto;text-align:center;padding:40px 30px;max-width:560px}
+.dchat-welcome .wtitle{font-family:'Noto Serif SC',serif;font-size:22px;color:var(--ink);margin-bottom:8px;font-weight:600}
+.dchat-welcome .wdesc{font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:22px}
+.dchat-welcome .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+@media (max-width:520px){.dchat-welcome .wgrid{grid-template-columns:1fr}}
+.wcard{padding:14px 16px;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;cursor:pointer;text-align:left;transition:.18s}
+.wcard:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 4px 14px rgba(37,99,235,.15)}
+.wcard .wcico{font-size:20px;margin-bottom:6px}
+.wcard .wctitle{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.wcard .wcdesc{font-size:11px;color:var(--sub);line-height:1.5}
+
+.dmsg{display:flex;gap:12px;max-width:82%;animation:msgIn .22s ease both}
+.dmsg.user{align-self:flex-end;flex-direction:row-reverse}
+.dmsg.assistant{align-self:flex-start}
+.dmsg .davatar2{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'Noto Serif SC',serif}
+.dmsg.assistant .davatar2{background:linear-gradient(135deg,var(--blue),#4f6ef7);color:#fff;box-shadow:0 3px 8px rgba(37,99,235,.25)}
+.dmsg.user .davatar2{background:linear-gradient(135deg,#64748b,#475569);color:#fff}
+.dmsg .dbubble{padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.75;color:var(--ink);white-space:pre-wrap;word-wrap:break-word;max-width:100%}
+.dmsg.assistant .dbubble{background:var(--sur);border:1px solid var(--bdr);border-top-left-radius:4px;box-shadow:0 1px 3px rgba(26,35,64,.04)}
+.dmsg.user .dbubble{background:var(--blue);color:#fff;border-top-right-radius:4px}
+.dmsg .dtime{font-size:10px;color:var(--sub);margin-top:5px;opacity:.7;font-family:'JetBrains Mono',monospace}
+.dmsg.user .dtime{text-align:right}
+
+.dchat-typing{display:inline-flex;gap:5px;padding:14px 18px;background:var(--sur);border:1px solid var(--bdr);border-radius:14px;border-top-left-radius:4px;align-items:center}
+.dchat-typing span{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:dotPulse 1.2s ease-in-out infinite both}
+.dchat-typing span:nth-child(1){animation-delay:-.32s}
+.dchat-typing span:nth-child(2){animation-delay:-.16s}
+
+.dchat-foot{padding:16px 20px;background:var(--sur);border-top:1px solid var(--bdr);flex-shrink:0}
+.dchat-qbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dchat-qbar button{padding:6px 12px;border-radius:16px;background:var(--sur2);border:1px solid var(--bdr);font-size:12px;color:var(--ink2);cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:.12s}
+.dchat-qbar button:hover:not(:disabled){border-color:var(--blue);color:var(--blue);background:var(--blt)}
+.dchat-qbar button:disabled{opacity:.5;cursor:not-allowed}
+.dchat-inputrow{display:flex;gap:10px;align-items:flex-end}
+.dchat-inputrow textarea{flex:1;border:1.5px solid var(--bdr2);border-radius:11px;padding:11px 14px;font-size:14px;font-family:'Noto Sans SC',sans-serif;resize:none;min-height:46px;max-height:160px;line-height:1.55;background:var(--sur2);color:var(--ink);transition:.15s;font-weight:400}
+.dchat-inputrow textarea:focus{outline:none;border-color:var(--blue);background:var(--sur);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.dchat-inputrow .dsend{flex-shrink:0;padding:0 22px;height:46px;border-radius:11px;background:linear-gradient(135deg,var(--blue),#4f6ef7);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;font-family:'Noto Sans SC',sans-serif;transition:.15s}
+.dchat-inputrow .dsend:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.35)}
+.dchat-inputrow .dsend:disabled{opacity:.4;cursor:not-allowed}
+.dhint{font-size:11px;color:var(--sub);margin-top:7px;font-family:'JetBrains Mono',monospace;text-align:right}
+.dhint kbd{padding:1px 5px;background:var(--sur2);border:1px solid var(--bdr);border-radius:3px;font-size:10px}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+<!-- Header -->
+<header class="hdr">
+  <div class="logo">
+    <div class="lbox">估</div>
+    <div><div class="lname">慧估</div><div class="lsub">Smart Prediction</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="chip">多模型 · K折CV</span>
+    <span class="chip g">同花顺数据源</span>
+    <button class="hbtn" @click="reset" v-if="step>0">↩ 重新分析</button>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hbadge">多模型映射 · K折时间序列交叉验证 · 自动选优</div>
+  <h1>洞察企业价值，<em>预见盈利未来</em></h1>
+  <p>Stage 1 上传整行业数据 → K折CV 评估 5 类模型 → 为每个指标选出最优算法。<br>Stage 2 上传目标公司数据 → 用最优模型组合预测未来多年走势。</p>
+  <div class="hstats">
+    <div class="hstat"><div class="n">5</div><div class="l">候选机器学习模型</div></div>
+    <div class="hstat"><div class="n">K折CV</div><div class="l">时间序列交叉验证</div></div>
+    <div class="hstat"><div class="n">8</div><div class="l">核心财务指标</div></div>
+    <div class="hstat"><div class="n">1–5年</div><div class="l">自选预测周期</div></div>
+  </div>
+</div>
+
+<!-- ══ STEP 0 ══ -->
+<div v-if="step===0" class="wrap fu">
+
+  <!-- Stage Switcher -->
+  <div class="stg">
+    <button class="stgbtn" :class="{on:stage==='eval'}" @click="stage='eval'">
+      <span class="stgn">A</span>
+      <span class="stgl">
+        <span class="stgt">行业选优</span>
+        <span class="stgd">上传整行业数据，K折CV 评估模型</span>
+      </span>
+    </button>
+    <button class="stgbtn" :class="{on:stage==='pred'}" @click="stage='pred'">
+      <span class="stgn">B</span>
+      <span class="stgl">
+        <span class="stgt">公司预测</span>
+        <span class="stgd">{{ evalDone ? '用最优模型组合预测单公司' : '先完成 A 步进行模型选优' }}</span>
+      </span>
+    </button>
+    <button class="stgbtn" :class="{on:stage==='sentiment'}" @click="stage='sentiment'">
+      <span class="stgn">C</span>
+      <span class="stgl">
+        <span class="stgt">舆情分析</span>
+        <span class="stgd">爬取股吧 + LLM 情感分析 + 结构化</span>
+      </span>
+    </button>
+    <button class="stgbtn" :class="{on:stage==='chat'}" @click="enterChatStage">
+      <span class="stgn">D</span>
+      <span class="stgl">
+        <span class="stgt">AI 对话</span>
+        <span class="stgd">与大模型对话，解读预测、舆情与财务问题</span>
+      </span>
+    </button>
+  </div>
+
+  <div v-if="errMsg" class="errbanner">
+    ⚠ {{ errMsg }}
+  </div>
+
+  <!-- ═══ Stage A: 行业选优 ═══ -->
+  <div v-show="stage==='eval'">
+
+    <!-- 已完成状态提示 -->
+    <div v-if="evalDone" class="eval-done">
+      <div class="eico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div class="etxt">
+        <div class="ttl">行业选优已完成</div>
+        <div class="sub">{{evalRes.n_companies}} 家公司 · K={{evalRes.n_splits}} 折CV · 用时 {{evalRes.elapsed}}s · 已为 {{Object.keys(evalRes.best_models||{}).length}} 个指标选出最优模型</div>
+      </div>
+      <button class="btng" @click="stage='pred'">前往公司预测 →</button>
+    </div>
+
+    <div class="sec-hdr">
+      <div class="sec-step">A</div><h2>上传行业数据 · K折CV 选优</h2>
+      <div class="sdiv"></div><span class="snote">整行业 xlsx（多家公司×季度×8指标）</span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:24px;max-width:800px;margin:0 auto" v-if="!evalDone">
+
+      <div class="card" style="padding:24px">
+        <div class="upbox" :class="{drag:isDragE,'upok':evalFile}" @dragover.prevent="isDragE=true" @dragleave="isDragE=false" @drop.prevent="onDropEval" @click="$refs.fiE.click()">
+          <input type="file" ref="fiE" @change="onFileEval" accept=".xlsx,.xls" style="display:none">
+          <div v-if="!evalFile">
+            <div class="uico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M9 17v-6l-3 3m3-3l3 3M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><rect x="3" y="3" width="18" height="9" rx="2"/></svg></div>
+            <div class="uptit">上传整行业数据文件</div>
+            <div class="upsub">.xlsx / .xls（多家公司的宽表，例如：半导体--10个指标.xlsx）</div>
+          </div>
+          <div v-else>
+            <div class="uico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <div class="uptit">{{ evalFile.name }}</div>
+            <div class="upsub">{{ fmtSize(evalFile.size) }} · 就绪</div>
+          </div>
+        </div>
+
+        <div v-if="evalFile" style="margin-top:20px">
+          <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">交叉验证折数 K</div>
+          <div class="kfsel">
+            <button v-for="k in [3,4,5,6,8]" :key="k" class="kfbtn" :class="{on:kFolds===k}" @click="kFolds=k">K = {{k}}</button>
+          </div>
+          <div style="margin-top:12px;padding:10px 12px;background:var(--blt);border:1px solid var(--bmd);border-radius:7px;font-size:12px;color:var(--blue)">
+            将对每个指标的行业中位数时序，用 <strong>TimeSeriesSplit {{kFolds}} 折CV</strong> 评估 <strong>{{MODEL_COUNT}} 个候选模型</strong>（LightGBM、GBM、随机森林、岭回归、弹性网络），输出每指标的最优算法。
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;margin-top:20px">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">K折CV 选优流程</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--ink2)">
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">1.</span><span>解析 xlsx，提取所有公司 8 项指标 → 计算行业中位数时序</span></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">2.</span><span>对每个指标构建滑窗特征（8 期原始值 + 一阶二阶差分 + 同比 + 趋势）</span></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">3.</span><span>用 TimeSeriesSplit (保持时序) 对 5 个模型跑 K 折 CV，计算每折 MSE</span></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">4.</span><span>按 mean MSE 排序，为每个指标选出最优模型，构建"指标 → 模型"映射表</span></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">5.</span><span>下一步（Stage B）用这个映射表对单公司数据预测</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:8px">
+        <button class="btnp" @click="runEvaluate" :disabled="!evalFile||evaluating">
+          <svg v-if="!evaluating" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 19V6l-2 2M15 5v13l2-2"/><path d="M4 12h16"/></svg>
+          <svg v-else class="spin" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>
+          {{ evaluating ? '正在跑 K折CV...' : '启动行业选优（K='+kFolds+'）' }}
+        </button>
+        <div v-if="!evalFile" style="margin-top:10px;font-size:13px;color:var(--sub)">请先上传行业数据</div>
+      </div>
+    </div>
+
+    <!-- 选优结果展示 -->
+    <div v-if="evalDone">
+
+      <div class="sumstat">
+        <div class="sumc">
+          <div class="lbl">候选模型数</div>
+          <div class="val">{{ evalRes.model_names.length }}</div>
+          <div class="sub">LightGBM / GBM / RF / Ridge / ElasticNet</div>
+        </div>
+        <div class="sumc">
+          <div class="lbl">评估指标数</div>
+          <div class="val">{{ Object.keys(evalRes.indicators||{}).length }}</div>
+          <div class="sub">每指标独立选模</div>
+        </div>
+        <div class="sumc">
+          <div class="lbl">CV 折数</div>
+          <div class="val">K = {{ evalRes.n_splits }}</div>
+          <div class="sub">TimeSeriesSplit</div>
+        </div>
+        <div class="sumc">
+          <div class="lbl">评估耗时</div>
+          <div class="val">{{ evalRes.elapsed }}s</div>
+          <div class="sub">{{ evalRes.n_companies }} 家公司</div>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-bottom:20px">
+        <!-- 模型排行榜 -->
+        <div class="card" style="padding:22px">
+          <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">模型选优排行榜</div>
+          <div style="font-size:12px;color:var(--sub);margin-bottom:14px">按胜场数排序（在多少个指标上成为最优）</div>
+          <table class="lbtbl">
+            <thead><tr><th>排名</th><th>模型</th><th>类型</th><th>胜场</th><th>平均 MSE</th></tr></thead>
+            <tbody>
+              <tr v-for="(m,i) in evalRes.leaderboard" :key="m.model">
+                <td><span class="lbrank" :class="'r'+(i+1)">{{ i+1 }}</span></td>
+                <td style="color:var(--ink);font-weight:600;font-family:'Noto Sans SC',sans-serif">{{ m.label }}</td>
+                <td><span class="mfam" :class="m.family">{{ m.family }}</span></td>
+                <td>
+                  <div class="lbwin">
+                    <span style="font-weight:600;color:var(--ink);min-width:20px">{{ m.wins }}</span>
+                    <div class="winbar"><div class="winfill" :style="{width:(m.wins/(Object.keys(evalRes.indicators||{}).length||1)*100)+'%'}"></div></div>
+                  </div>
+                </td>
+                <td>{{ m.avg_mse !== null ? m.avg_mse.toFixed(4) : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- MSE 对比热力柱状图 -->
+        <div class="card" style="padding:22px">
+          <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">各指标 × 各模型 MSE（K折CV 均值）</div>
+          <div style="font-size:12px;color:var(--sub);margin-bottom:14px">数值越低越准 · 同色块对应同一指标</div>
+          <div id="cEval" style="height:340px"></div>
+        </div>
+      </div>
+
+      <!-- 最优模型映射表 -->
+      <div class="card" style="padding:22px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">指标 → 最优模型 映射表</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:4px">Stage B 将用这份映射对单公司预测</div>
+          </div>
+          <button class="btng" @click="dlMapping">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> 导出 JSON
+          </button>
+        </div>
+        <div class="bm-grid">
+          <div class="bm-chip" v-for="(mname,key) in evalRes.best_models" :key="key">
+            <div class="bm-ind">{{ evalRes.indicators[key]?.short || key }}</div>
+            <div class="bm-mn">{{ evalRes.model_labels[mname] }}</div>
+            <div class="bm-mse">MSE = {{ evalRes.indicators[key]?.best_mse?.toFixed(4) }} · σ = {{ evalRes.indicators[key]?.best_std?.toFixed(4) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 详细 CV 结果表 -->
+      <div class="card" style="padding:22px;margin-bottom:20px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">详细 CV 结果（每指标 × 每模型）</div>
+        <div style="overflow-x:auto">
+          <table class="dtbl">
+            <thead>
+              <tr>
+                <th>指标</th>
+                <th v-for="m in evalRes.model_names" :key="m">{{ evalRes.model_labels[m] }}</th>
+                <th>最优</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(info,key) in evalRes.indicators" :key="key">
+                <td style="color:var(--ink);font-weight:500">{{ info.short }}</td>
+                <td v-for="m in evalRes.model_names" :key="m" style="font-family:'JetBrains Mono',monospace"
+                    :style="info.best_model===m ? 'background:#f0fdf4;color:#16a34a;font-weight:700':''">
+                  {{ info.per_model[m]?.mean_mse !== null ? info.per_model[m]?.mean_mse.toFixed(4) : '—' }}
+                </td>
+                <td><span class="chip" style="font-size:11px">{{ evalRes.model_labels[info.best_model] }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="text-align:center">
+        <button class="btnp" @click="stage='pred'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          进入 Stage B · 公司预测
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Stage B: 公司预测（原有流程） ═══ -->
+  <div v-show="stage==='pred'">
+
+    <!-- 选优状态提示 -->
+    <div v-if="evalDone" class="eval-done">
+      <div class="eico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div class="etxt">
+        <div class="ttl">将使用 Stage A 的最优模型组合</div>
+        <div class="sub">为 {{ Object.keys(evalRes.best_models||{}).length }} 个指标各自调用已选出的最优算法</div>
+      </div>
+      <button class="btng" @click="stage='eval'">查看选优详情</button>
+    </div>
+    <div v-else style="background:var(--rlt);border:1px solid #fecdd3;border-radius:9px;padding:12px 18px;font-size:13px;color:#9f1239;margin-bottom:20px">
+      ⚠ 请先完成 Stage A 行业选优，为每个指标选择最优模型。<a @click="stage='eval'" style="color:var(--blue);text-decoration:underline;cursor:pointer">前往行业选优</a>。
+    </div>
+
+    <div class="sec-hdr">
+      <div class="sec-step">B</div><h2>上传公司数据 · 滚动预测</h2>
+      <div class="sdiv"></div><span class="snote">同花顺导出宽格式 .xlsx / .xls</span>
+    </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px;max-width:800px;margin:0 auto">
+    <!-- Upload -->
+    <div class="card" style="padding:24px">
+      <div class="upbox" :class="{drag:isDrag,'upok':file}" @dragover.prevent="isDrag=true" @dragleave="isDrag=false" @drop.prevent="onDrop" @click="$refs.fi.click()">
+        <input type="file" ref="fi" @change="onFile" accept=".xlsx,.xls" style="display:none">
+        <div v-if="!file">
+          <div class="uico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+          <div class="uptit">拖拽文件或点击上传</div>
+          <div class="upsub">.xlsx / .xls（同花顺导出宽格式）</div>
+        </div>
+        <div v-else>
+          <div class="uico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="uptit">{{ file.name }}</div>
+          <div class="upsub">{{ fmtSize(file.size) }} · 就绪</div>
+        </div>
+      </div>
+
+      <!-- Company selector -->
+      <div v-if="file && companies.length > 0" style="margin-top:20px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">选择公司</div>
+        <div style="max-height:200px;overflow-y:auto;border:1px solid var(--bdr2);border-radius:8px;padding:8px;background:var(--sur2)">
+          <div v-for="(company, index) in companies" :key="index" 
+               class="yrbtn" 
+               :class="{on:selectedCompany === company}" 
+               @click="selectedCompany = company"
+               style="width:100%;text-align:left;margin-bottom:4px">
+            {{ company }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Forecast year selector -->
+      <div v-if="file" style="margin-top:20px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">选择预测年数</div>
+        <div class="yrsel">
+          <button v-for="y in [1,2,3,4,5]" :key="y" class="yrbtn" :class="{on:foreYrs===y}" @click="foreYrs=y">
+            {{y}}年（{{y*4}}季）
+          </button>
+        </div>
+        <div style="margin-top:12px;padding:10px 12px;background:var(--blt);border:1px solid var(--bmd);border-radius:7px;font-size:12px;color:var(--blue)">
+            {{ evalDone ? '将用 Stage A 选出的最优模型组合' : '请先完成 Stage A 行业选优' }}，滚动预测 <strong>{{foreYrs*4}} 个季度</strong>，并输出验证 MSE
+          </div>
+      </div>
+
+      <!-- 计算流程 -->
+      <div class="card" style="padding:20px;margin-top:20px">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">计算流程</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--ink2)">
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">1.</span><span>解析 xlsx，提取目标公司数据</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">2.</span><span>对每个指标构建滑窗特征（8期原始值+差分+趋势）</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">3.</span><span>按"指标→最优模型"映射表分别训练</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">4.</span><span>滚动多步预测，每步结果作为下步输入</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--blue);font-weight:600">5.</span><span>返回验证 MSE 并生成报告</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Indicator info -->
+    <div class="card" style="padding:22px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <span style="font-size:14px;font-weight:600;color:var(--ink)">8 项核心财务指标</span>
+        <span class="mctag g">同花顺</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div v-for="(ind,i) in indMeta" :key="i" class="iitem">
+          <div class="inum">{{String(i+1).padStart(2,'0')}}</div>
+          <div><div class="iname">{{ind.name}}</div><div class="idesc">{{ind.desc}}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:8px">
+    <button class="btnp" @click="submit" :disabled="!file||submitting||!evalDone">
+      <svg v-if="!submitting" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg>
+      <svg v-else class="spin" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>
+      {{ submitting ? '正在训练模型...' : '上传并启动预测（'+foreYrs+'年）' }}
+    </button>
+    <div v-if="!file" style="margin-top:10px;font-size:13px;color:var(--sub)">请先上传文件</div>
+    <div v-else-if="!evalDone" style="margin-top:10px;font-size:13px;color:var(--sub)">请先完成 Stage A 行业选优</div>
+  </div>
+  </div>
+
+  <!-- ═══ Stage C: 舆情分析 ═══ -->
+  <div v-show="stage==='sentiment'">
+
+    <div class="sec-hdr">
+      <div class="sec-step" style="background:#6d28d9">C</div><h2>股吧爬取 · LLM 情感分析 · 结构化提取</h2>
+      <div class="sdiv"></div><span class="snote">东方财富股吧 + 个股公告</span>
+    </div>
+
+    <div style="max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+      <!-- 输入区 -->
+      <div class="card" style="padding:24px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:14px">① 输入股票代码，抓取股吧/公告数据</div>
+        <div class="sent-input">
+          <input v-model="sentStock" placeholder="股票代码，例如 600519（贵州茅台）、300750（宁德时代）" maxlength="10" @keydown.enter="doCrawl">
+          <select v-model="sentPages">
+            <option :value="1">1 页</option>
+            <option :value="2">2 页</option>
+            <option :value="3">3 页</option>
+          </select>
+          <button class="btnp" @click="doCrawl" :disabled="!sentStock||crawling" style="padding:12px 22px;font-size:14px">
+            <svg v-if="!crawling" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+            <svg v-else class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>
+            {{ crawling ? '爬取中...' : '爬取数据' }}
+          </button>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.7">
+          💡 支持沪深股票代码（600xxx / 000xxx / 300xxx / 688xxx）。数据来源：<a href="https://guba.eastmoney.com" target="_blank" style="color:var(--blue)">东方财富股吧</a> 及个股公告接口。爬取结果会缓存 5 分钟。
+        </div>
+      </div>
+
+      <!-- 爬取结果 -->
+      <div v-if="sentData.stock_code" class="card" style="padding:22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">已抓取 {{sentData.stock_code}} · {{sentData.posts_count}} 条帖子 + {{sentData.news_count||0}} 条公告</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px">爬取时间：{{sentData.crawled_at}}</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <a v-if="sentData.source_urls" :href="sentData.source_urls.guba" target="_blank" class="btng">🔗 股吧原页</a>
+            <button class="btnp" @click="doAnalyze" :disabled="!sentData.posts?.length||analyzing" style="padding:10px 20px;font-size:13px">
+              <svg v-if="!analyzing" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9.663 17h4.673M12 3v1M3 12h1M20 12h1M5.636 5.636l.707.707M17.657 17.657l.707.707"/><circle cx="12" cy="12" r="5"/></svg>
+              <svg v-else class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>
+              {{ analyzing ? 'AI 分析中...' : '② 启动 LLM 情感分析' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="g2">
+          <div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:500">股吧帖子（前 {{Math.min(sentData.posts?.length||0,30)}} 条）</div>
+            <div class="postlist">
+              <div v-for="(p,i) in (sentData.posts||[]).slice(0,30)" :key="i" class="postitem">
+                <div class="postidx">{{i+1}}</div>
+                <div class="postmain">
+                  <div class="posttitle">
+                    <a v-if="p.link" :href="p.link" target="_blank">{{p.title}}</a>
+                    <span v-else>{{p.title}}</span>
+                    <span v-if="postSentMap[i+1]" class="sent-tag" :class="postSentMap[i+1].sentiment" style="margin-left:6px">
+                      {{ postSentMap[i+1].sentiment==='positive'?'+':postSentMap[i+1].sentiment==='negative'?'−':'=' }}
+                    </span>
+                  </div>
+                  <div class="postmeta">
+                    <span>👁 {{p.reads}}</span><span>💬 {{p.replies}}</span>
+                    <span v-if="p.author">👤 {{p.author}}</span>
+                    <span v-if="p.time">🕒 {{p.time}}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="!sentData.posts?.length" style="padding:40px 20px;text-align:center;color:var(--sub);font-size:13px">未抓到帖子</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:500">个股公告 / 新闻（前 {{Math.min(sentData.news?.length||0,20)}} 条）</div>
+            <div class="postlist">
+              <div v-for="(n,i) in (sentData.news||[]).slice(0,20)" :key="i" class="postitem">
+                <div class="postidx" style="background:#f5f3ff;color:#6d28d9">{{i+1}}</div>
+                <div class="postmain">
+                  <div class="posttitle">{{n.title}}</div>
+                  <div class="postmeta">
+                    <span v-if="n.type" style="color:#6d28d9">📌 {{n.type}}</span>
+                    <span v-if="n.time">🕒 {{n.time}}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="!sentData.news?.length" style="padding:40px 20px;text-align:center;color:var(--sub);font-size:13px">未获取到公告</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分析结果 -->
+      <div v-if="sentAnalysis && sentAnalysis.overall_sentiment" class="fu">
+
+        <div class="sec-hdr" style="margin-top:14px">
+          <div class="sec-step" style="background:#6d28d9">✦</div><h2>LLM 情感分析 & 结构化结果</h2>
+          <div class="sdiv"></div>
+          <button class="btng" @click="exportSentJson">导出 JSON</button>
+        </div>
+
+        <div class="sumstat">
+          <div class="sumc">
+            <div class="lbl">整体情感</div>
+            <div class="val" :style="{color:sentColor(sentAnalysis.overall_sentiment)}">
+              {{ sentAnalysis.overall_sentiment==='positive'?'正面':sentAnalysis.overall_sentiment==='negative'?'负面':'中性' }}
+            </div>
+            <div class="sub">{{ sentAnalysis.market_mood || '—' }}</div>
+          </div>
+          <div class="sumc">
+            <div class="lbl">情感得分</div>
+            <div class="val" :style="{color:sentScoreColor(sentAnalysis.sentiment_score)}">{{sentAnalysis.sentiment_score}}/100</div>
+            <div class="sub">0=极悲观 · 50=中性 · 100=极乐观</div>
+          </div>
+          <div class="sumc">
+            <div class="lbl">正 / 负 / 中 分布</div>
+            <div class="val" style="font-size:16px">
+              <span style="color:#15803d">{{sentAnalysis.positive_count||0}}</span> /
+              <span style="color:#b91c1c">{{sentAnalysis.negative_count||0}}</span> /
+              <span style="color:#4338ca">{{sentAnalysis.neutral_count||0}}</span>
+            </div>
+            <div class="sub">帖子数（LLM 逐条判断）</div>
+          </div>
+          <div class="sumc">
+            <div class="lbl">LLM 置信度</div>
+            <div class="val">{{ Math.round((sentAnalysis.confidence||0.7)*100) }}%</div>
+            <div class="sub">分析时间：{{sentMeta.analyzed_at}}</div>
+          </div>
+        </div>
+
+        <div class="g2" style="margin-bottom:20px">
+          <div class="card" style="padding:22px">
+            <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">情感分布饼图</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:8px">按 LLM 逐条情感判断</div>
+            <div id="cSentPie" style="height:280px"></div>
+          </div>
+          <div class="card" style="padding:22px">
+            <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">情感得分仪表</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:8px">整体情感倾向 0-100</div>
+            <div id="cSentGauge" style="height:280px"></div>
+          </div>
+        </div>
+
+        <div class="sent-section" style="margin-bottom:16px">
+          <h4><span class="dot"></span>舆情摘要</h4>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.8">{{sentAnalysis.summary||'无'}}</div>
+        </div>
+
+        <div class="g2" style="margin-bottom:16px">
+          <div class="sent-section">
+            <h4><span class="dot" style="background:var(--blue)"></span>热门话题</h4>
+            <div><span v-for="t in (sentAnalysis.hot_topics||[])" :key="t" class="tagchip topic">{{t}}</span>
+                 <span v-if="!sentAnalysis.hot_topics?.length" style="color:var(--sub);font-size:12px">暂无</span></div>
+          </div>
+          <div class="sent-section">
+            <h4><span class="dot" style="background:#7c3aed"></span>关键事件</h4>
+            <div><span v-for="e in (sentAnalysis.key_events||[])" :key="e" class="tagchip event">{{e}}</span>
+                 <span v-if="!sentAnalysis.key_events?.length" style="color:var(--sub);font-size:12px">暂无</span></div>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="sent-section">
+            <h4><span class="dot" style="background:#e11d48"></span>潜在风险</h4>
+            <div><span v-for="r in (sentAnalysis.risks||[])" :key="r" class="tagchip risk">⚠ {{r}}</span>
+                 <span v-if="!sentAnalysis.risks?.length" style="color:var(--sub);font-size:12px">未识别明显风险</span></div>
+          </div>
+          <div class="sent-section">
+            <h4><span class="dot" style="background:#16a34a"></span>机会点</h4>
+            <div><span v-for="o in (sentAnalysis.opportunities||[])" :key="o" class="tagchip opp">✓ {{o}}</span>
+                 <span v-if="!sentAnalysis.opportunities?.length" style="color:var(--sub);font-size:12px">未识别明确机会</span></div>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-top:22px">
+          <button class="btnp" style="background:linear-gradient(135deg,#6d28d9,#4f6ef7)" @click="askAIAboutSentiment">
+            💬 与 AI 助手讨论这份舆情分析
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ Stage D: AI 对话 ═══ -->
+  <div v-show="stage==='chat'">
+
+    <div class="sec-hdr">
+      <div class="sec-step" style="background:linear-gradient(135deg,var(--blue),#4f6ef7)">D</div>
+      <h2>慧估 AI · 大模型对话助手</h2>
+      <div class="sdiv"></div>
+      <span class="snote">DeepSeek · 携带预测/选优/舆情上下文 · 多轮记忆</span>
+    </div>
+
+    <div class="dchat-wrap">
+
+      <!-- 左侧上下文面板 -->
+      <div class="dchat-side">
+        <div class="dctx-card">
+          <h4><span style="color:var(--blue)">●</span> 对话上下文</h4>
+          <div class="dctx-item">
+            <div class="dctx-dot" :class="res.indicators?'on':'off'"></div>
+            <div class="dctx-label">预测</div>
+            <div class="dctx-value" :class="{off:!res.indicators}">
+              {{ res.indicators ? (selectedCompany || '—') + ' · ' + foreYrs + ' 年' : '未完成' }}
+            </div>
+          </div>
+          <div class="dctx-item">
+            <div class="dctx-dot" :class="evalDone?'on':'off'"></div>
+            <div class="dctx-label">选优</div>
+            <div class="dctx-value" :class="{off:!evalDone}">
+              {{ evalDone ? 'K='+evalRes.n_splits+' 折 CV' : '未完成' }}
+            </div>
+          </div>
+          <div class="dctx-item">
+            <div class="dctx-dot" :class="sentAnalysis.overall_sentiment?'on':'off'"></div>
+            <div class="dctx-label">舆情</div>
+            <div class="dctx-value" :class="{off:!sentAnalysis.overall_sentiment}">
+              {{ sentAnalysis.overall_sentiment ? (sentData.stock_code||'') + ' · ' + (sentAnalysis.overall_sentiment==='positive'?'正面':sentAnalysis.overall_sentiment==='negative'?'负面':'中性') : '未分析' }}
+            </div>
+          </div>
+          <div class="dctx-item">
+            <div class="dctx-dot on" style="background:var(--gold);box-shadow:0 0 0 3px rgba(245,158,11,.15)"></div>
+            <div class="dctx-label">会话</div>
+            <div class="dctx-value" style="font-family:'JetBrains Mono',monospace;font-size:11px">{{ chatSessionId.slice(-10) }}</div>
+          </div>
+        </div>
+
+        <div class="dctx-card">
+          <h4><span style="color:#6d28d9">◆</span> 推荐提问</h4>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button v-for="q in chatSuggestions" :key="q"
+                    style="width:100%;padding:9px 12px;border-radius:8px;background:var(--sur2);border:1px solid var(--bdr);font-size:12px;color:var(--ink2);cursor:pointer;text-align:left;font-family:'Noto Sans SC',sans-serif;transition:.12s"
+                    @click="sendChat(q)" :disabled="chatSending"
+                    onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)';this.style.background='var(--blt)'"
+                    onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--ink2)';this.style.background='var(--sur2)'">{{ q }}</button>
+          </div>
+        </div>
+
+        <div class="dctx-card" style="background:linear-gradient(135deg,#f0f7ff,#fff)">
+          <h4><span style="color:var(--green)">✓</span> 使用提示</h4>
+          <div style="font-size:12px;color:var(--ink2);line-height:1.8">
+            · 先完成 A/B/C 任一步,AI 会自动引用数据<br>
+            · 支持多轮追问,记忆当前会话<br>
+            · <kbd style="padding:1px 5px;background:var(--sur2);border:1px solid var(--bdr);border-radius:3px;font-size:10px">Enter</kbd> 发送,<kbd style="padding:1px 5px;background:var(--sur2);border:1px solid var(--bdr);border-radius:3px;font-size:10px">Shift+Enter</kbd> 换行<br>
+            · 可导出全部对话为 Markdown
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧主对话区 -->
+      <div class="dchat-main">
+        <div class="dchat-head">
+          <div class="dtitle">
+            <div class="davatar">AI</div>
+            <div>
+              <div class="dname">慧估 AI 助手</div>
+              <div class="dmeta">DeepSeek Chat · {{ chatMessages.length }} 条消息</div>
+            </div>
+          </div>
+          <div class="dchat-actions">
+            <button @click="exportChat" :disabled="!chatMessages.length" title="导出 Markdown">📥 导出</button>
+            <button @click="clearChat" :disabled="!chatMessages.length" title="清空对话">🗑 清空</button>
+          </div>
+        </div>
+
+        <div class="dchat-body" ref="dchatBody">
+
+          <!-- 欢迎页(无消息时) -->
+          <div v-if="!chatMessages.length && !chatSending" class="dchat-welcome">
+            <div style="font-size:48px;margin-bottom:8px">🤖</div>
+            <div class="wtitle">您好,我是慧估 AI 助手</div>
+            <div class="wdesc">
+              我可以帮您解读财务预测、分析舆情情感、比较模型效果、回答任何上市公司和财务相关的问题。
+              <br>您目前已加载的数据会作为上下文被我看到。
+            </div>
+            <div class="wgrid">
+              <div class="wcard" @click="sendChat('基于当前的预测结果,总体评价一下这家公司未来的盈利能力')">
+                <div class="wcico">📊</div>
+                <div class="wctitle">解读预测结果</div>
+                <div class="wcdesc">基于 B 步预测给出总体评价</div>
+              </div>
+              <div class="wcard" @click="sendChat('哪个财务指标的预测最值得关注?为什么?')">
+                <div class="wcico">🔍</div>
+                <div class="wctitle">关键指标挖掘</div>
+                <div class="wcdesc">找出最值得关注的指标</div>
+              </div>
+              <div class="wcard" @click="sendChat('当前股吧情感与预测结果是否一致?如何理解分歧?')">
+                <div class="wcico">💭</div>
+                <div class="wctitle">舆情 × 预测</div>
+                <div class="wcdesc">对比舆情与预测结果</div>
+              </div>
+              <div class="wcard" @click="sendChat('LightGBM、随机森林、岭回归这三类模型各自适合什么场景?')">
+                <div class="wcico">🧠</div>
+                <div class="wctitle">机器学习原理</div>
+                <div class="wcdesc">了解模型选择逻辑</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 消息列表 -->
+          <div v-for="(m,i) in chatMessages" :key="i" class="dmsg" :class="m.role">
+            <div class="davatar2">{{ m.role==='user' ? '我' : 'AI' }}</div>
+            <div>
+              <div class="dbubble">{{ m.content }}</div>
+              <div class="dtime">{{ m.time || '' }}</div>
+            </div>
+          </div>
+
+          <!-- 正在输入 -->
+          <div v-if="chatSending" class="dmsg assistant">
+            <div class="davatar2">AI</div>
+            <div class="dchat-typing"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+
+        <div class="dchat-foot">
+          <div class="dchat-qbar" v-if="chatMessages.length">
+            <button v-for="q in chatQuickPrompts" :key="q" @click="sendChat(q)" :disabled="chatSending">{{q}}</button>
+          </div>
+          <div class="dchat-inputrow">
+            <textarea v-model="chatInput"
+                      @keydown.enter.exact.prevent="sendChat()"
+                      placeholder="问点什么… 例如:为什么毛利率预测会下降? 舆情中的风险点会影响预测吗?"
+                      rows="1"
+                      :disabled="chatSending"></textarea>
+            <button class="dsend" @click="sendChat()" :disabled="!chatInput.trim()||chatSending">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              发送
+            </button>
+          </div>
+          <div class="dhint">
+            <kbd>Enter</kbd> 发送 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行 · 已记忆 {{ chatMessages.length }} 轮
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 1: Loading ══ -->
+<div v-if="step===1" class="wrap fu">
+  <div class="card" style="max-width:560px;margin:0 auto;padding:52px 44px;text-align:center">
+    <div style="position:relative;width:88px;height:88px;margin:0 auto 28px">
+      <svg class="spin" width="88" height="88" viewBox="0 0 88 88" fill="none" style="position:absolute;top:0;left:0">
+        <circle cx="44" cy="44" r="40" stroke="#e2e6f0" stroke-width="4"/>
+        <path d="M44 4 A40 40 0 0 1 84 44" stroke="url(#ag)" stroke-width="4" stroke-linecap="round"/>
+        <defs><linearGradient id="ag" x1="44" y1="4" x2="84" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#2563eb"/><stop offset="1" stop-color="#0d9488"/></linearGradient></defs>
+      </svg>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Noto Serif SC',serif;font-size:20px;color:var(--blue)">估</div>
+    </div>
+    <div style="font-family:'Noto Serif SC',serif;font-size:22px;color:var(--ink);margin-bottom:6px">后端训练中</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:32px">
+      {{ evalDone ? '正在按最优模型映射为每个指标训练' : 'Python 正在为每个指标训练模型' }} 并预测 {{foreYrs}} 年（{{foreYrs*4}} 季度）
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+      <div v-for="(s,i) in asteps" :key="i" class="astep" :class="{done:aProg>s.t,act:aProg<=s.t&&aProg>(i>0?asteps[i-1].t:0)}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="sico" :class="{done:aProg>s.t,act:aProg<=s.t&&aProg>(i>0?asteps[i-1].t:0),idle:aProg<=(i>0?asteps[i-1].t:0)}">
+            <svg v-if="aProg>s.t" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            <span v-else>{{i+1}}</span>
+          </div>
+          <span style="font-size:14px;color:var(--ink)">{{s.name}}</span>
+        </div>
+        <span style="font-size:12px;font-family:'JetBrains Mono',monospace"
+          :style="aProg>s.t?'color:#16a34a':aProg>(i>0?asteps[i-1].t:0)?'color:var(--blue)':'color:var(--dim)'">
+          {{aProg>s.t?'完成':aProg>(i>0?asteps[i-1].t:0)?'计算中':'等待'}}
+        </span>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px">
+        <span style="color:var(--sub)">正在与后端通信...</span>
+        <span style="color:var(--blue);font-family:'JetBrains Mono',monospace">{{aProg}}%</span>
+      </div>
+      <div class="pbwrap" style="height:7px"><div class="pbfill" :style="{width:aProg+'%'}"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 2: Results ══ -->
+<div v-if="step===2" class="wrap fu">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
+    <div>
+      <div style="font-family:'Noto Serif SC',serif;font-size:21px;color:var(--ink)">智能预测分析报告</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:4px">
+        {{ evalDone ? '多模型选优组合' : 'LightGBM（默认）' }} · {{file?.name}} · {{ selectedCompany || '行业中位数' }}
+        · 预测 {{res.years}} 年（{{res.years*4}} 季度） · {{ Object.keys(res.indicators||{}).length }} 个指标
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btng" @click="dlCSV">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> 导出 CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tbtn" :class="{on:tab==='ov'}" @click="switchTab('ov')">综合评估</button>
+    <button class="tbtn" :class="{on:tab==='tr'}" @click="switchTab('tr')">预测趋势</button>
+    <button class="tbtn" :class="{on:tab==='dp'}" @click="switchTab('dp')">杜邦分析</button>
+    <button class="tbtn" :class="{on:tab==='ms'}" @click="switchTab('ms')">模型精度</button>
+    <button class="tbtn" :class="{on:tab==='sel'}" @click="switchTab('sel')" v-if="evalDone">选优明细</button>
+  </div>
+
+  <!-- ─ Tab: Overview ─ -->
+  <div v-if="tab==='ov'">
+    <div style="display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:20px">
+
+      <!-- Company vs Industry comparison -->
+      <div class="card" style="padding:20px;background:var(--blt);border-color:var(--bmd)">
+        <div style="font-size:14px;font-weight:600;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          公司与行业平均比较
+        </div>
+        <div style="font-size:13px;color:var(--ink2);line-height:1.6">
+          基于历史数据，该公司在核心财务指标上{{res.indicators?'整体表现'+(res.fore_last['销售毛利率']>res.hist_last['销售毛利率']?'优于':'略低于')+'行业平均水平':'需上传数据后分析'}}。
+        </div>
+      </div>
+
+      <!-- Metric cards from data -->
+      <div class="g3">
+        <div class="mcard" v-for="(mc,i) in metricCards" :key="i">
+          <div class="mccat">{{mc.cat}}<span class="mctag" :class="mc.tc">{{mc.tag}}</span></div>
+          <div class="mcrow" v-for="(it,j) in mc.items" :key="j">
+            <div class="mclbl">{{it.lbl}}</div>
+            <div class="mcvr">
+              <span class="mcval">{{fv(it.val)}}{{it.unit}}</span>
+              <span class="mcdel" :class="it.up?'up':'dn'">{{it.up?'↑':'↓'}} {{Math.abs(it.val-it.hist).toFixed(2)}}{{it.unit}}</span>
+            </div>
+            <div class="mcbar"><div class="mcfill" :style="{width:Math.min(Math.abs(it.val)*it.scale,100)+'%',background:it.up?'#e11d48':'#16a34a'}"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="g2">
+      <div class="card" style="padding:22px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--blue);display:inline-block"></span>
+          毛利率 / 净利率（历史 + {{evalDone ? '最优模型' : 'LightGBM'}}预测）
+        </div>
+        <div id="c1" style="height:260px"></div>
+      </div>
+      <div class="card" style="padding:22px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block"></span>
+          ROE / ROA（历史 + {{evalDone ? '最优模型' : 'LightGBM'}}预测）
+        </div>
+        <div id="c2" style="height:260px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─ Tab: Trend ─ -->
+  <div v-if="tab==='tr'">
+    <div style="background:var(--blt);border:1px solid var(--bmd);border-radius:9px;padding:12px 18px;font-size:13px;color:var(--blue);margin-bottom:18px">
+      实线 = 历史数据 · 虚线 = {{evalDone ? '最优模型' : 'LightGBM'}} 预测 · 阴影 = 95% 置信区间（±5%）
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+      <button v-for="(key,i) in indKeys" :key="i" class="yrbtn" :class="{on:selI===i}" @click="selI=i;drawTrend()">
+        {{res.indicators[key]?.short}}
+      </button>
+    </div>
+    <div class="card" style="padding:24px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--ink)">{{indKeys[selI]}}</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:4px">{{selectedCompany?'公司':'行业'}}历史值 + {{evalDone ? '最优模型' : 'LightGBM'}} 滚动预测（{{res.years*4}}期）</div>
+        </div>
+        <div class="mse-badge" v-if="res.indicators[indKeys[selI]]?.train_mse">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          MSE = {{res.indicators[indKeys[selI]]?.train_mse?.toFixed(4)}}
+        </div>
+      </div>
+      <div id="c3" style="height:360px;margin-top:16px"></div>
+    </div>
+
+    <!-- Summary table with predicted values -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">各指标预测汇总（模型输出）</div>
+      <div style="overflow-x:auto">
+        <table class="dtbl">
+          <thead>
+            <tr>
+              <th>指标</th><th>历史末期值</th>
+              <th v-for="q in res.fore_labels?.slice(-4)" :key="q">{{q}}</th>
+              <th>预测末期值</th><th>MSE</th><th>方向</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="key in indKeys" :key="key">
+              <td style="color:var(--ink);font-weight:500">{{res.indicators[key]?.short}}</td>
+              <td style="font-family:'JetBrains Mono',monospace">{{fv(res.hist_last[key])}}</td>
+              <td v-for="(q,qi) in res.fore_labels?.slice(-4)" :key="q" class="fore" style="font-family:'JetBrains Mono',monospace">
+                {{fv(res.indicators[key]?.fore?.[res.indicators[key]?.fore?.length-4+qi])}}
+              </td>
+              <td class="fore" style="font-family:'JetBrains Mono',monospace;font-weight:600">{{fv(res.fore_last[key])}}</td>
+              <td><span class="mse-badge">{{res.indicators[key]?.train_mse?.toFixed(4) ?? 'N/A'}}</span></td>
+              <td :class="res.fore_last[key]>=res.hist_last[key]?'up':'dn'" style="font-family:'JetBrains Mono',monospace;font-size:12px">
+                {{res.fore_last[key]>=res.hist_last[key]?'↑':'↓'}} {{Math.abs((res.fore_last[key]||0)-(res.hist_last[key]||0)).toFixed(2)}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─ Tab: DuPont ─ -->
+  <div v-if="tab==='dp'">
+    <div class="g2" style="margin-bottom:20px">
+      <div class="card" style="padding:24px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:20px">杜邦分解（预测末期值）</div>
+        <div style="text-align:center">
+          <div class="dpnode root" style="max-width:210px;margin:0 auto">
+            <div class="dplbl">ROE 净资产收益率</div>
+            <div class="dpval" style="color:var(--blue)">{{fv(getF('净资产收益率ROE'))}}%</div>
+            <div style="font-size:11px;color:var(--sub);margin-top:4px">历史末期: {{fv(getH('净资产收益率ROE'))}}%</div>
+          </div>
+          <div style="font-size:18px;color:var(--dim);margin:10px 0">=</div>
+          <div style="display:grid;grid-template-columns:1fr 20px 1fr;gap:8px;align-items:center">
+            <div class="dpnode lv2">
+              <div class="dplbl">销售净利率</div>
+              <div class="dpval" style="color:#7c3aed">{{fv(getF('销售净利率'))}}%</div>
+              <div style="font-size:10px;color:var(--sub);margin-top:3px">历史: {{fv(getH('销售净利率'))}}%</div>
+            </div>
+            <div style="font-size:18px;color:var(--dim);text-align:center">×</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="dpnode lv2">
+                <div class="dplbl">总资产周转率</div>
+                <div class="dpval" style="color:var(--teal)">{{fv(getF('总资产周转率'))}}</div>
+                <div style="font-size:10px;color:var(--sub);margin-top:3px">历史: {{fv(getH('总资产周转率'))}}</div>
+              </div>
+              <div style="font-size:16px;color:var(--dim);text-align:center">×</div>
+              <div class="dpnode lv2">
+                <div class="dplbl">权益乘数</div>
+                <div class="dpval" style="color:#d97706">{{fv(getF('权益乘数（杜邦分析）'))}}</div>
+                <div style="font-size:10px;color:var(--sub);margin-top:3px">历史: {{fv(getH('权益乘数（杜邦分析）'))}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:24px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">杜邦三因子趋势</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:16px">= {{evalDone ? '最优模型' : 'LightGBM'}} 预测期</div>
+        <div id="c4" style="height:320px"></div>
+      </div>
+    </div>
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:14px">ROE 逐季走势（历史+预测）</div>
+      <div id="c5" style="height:240px"></div>
+    </div>
+  </div>
+
+  <!-- ─ Tab: MSE ─ -->
+  <div v-if="tab==='ms'">
+    <div class="g2">
+      <div class="card" style="padding:24px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">各指标验证集 MSE（越低越准确）</div>
+        <div id="c6" style="height:300px"></div>
+      </div>
+      <div class="card" style="padding:24px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">预测置信度雷达图</div>
+        <div id="c7" style="height:300px"></div>
+      </div>
+    </div>
+    <!-- MSE Table -->
+    <div class="card" style="padding:24px;margin-top:20px">
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">模型精度详情</div>
+      <table class="dtbl">
+        <thead><tr><th>指标</th><th>使用模型</th><th>验证集 MSE</th><th>历史末期值</th><th>预测末期值</th><th>置信度</th></tr></thead>
+        <tbody>
+          <tr v-for="key in indKeys" :key="key">
+            <td style="color:var(--ink);font-weight:500">{{res.indicators[key]?.short}}</td>
+            <td><span :class="res.indicators[key]?.method==='linear_fallback'?'chip g':'chip'" style="font-size:11px">{{res.indicators[key]?.model_label || res.indicators[key]?.model || '—'}}</span></td>
+            <td><span class="mse-badge">{{res.indicators[key]?.train_mse?.toFixed(4) ?? 'N/A'}}</span></td>
+            <td style="font-family:'JetBrains Mono',monospace">{{fv(res.hist_last[key])}}</td>
+            <td style="font-family:'JetBrains Mono',monospace;color:var(--blue);font-weight:500">{{fv(res.fore_last[key])}}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="width:60px;height:4px;background:var(--bg2);border-radius:99px;overflow:hidden">
+                  <div :style="{width:mseToConf(res.indicators[key]?.train_mse)+'%',height:'100%',background:'var(--blue)',borderRadius:'99px'}"></div>
+                </div>
+                <span style="font-size:11px;color:var(--sub);font-family:'JetBrains Mono',monospace">{{mseToConf(res.indicators[key]?.train_mse)}}%</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─ Tab: 选优明细 ─ -->
+  <div v-if="tab==='sel' && evalDone">
+    <div style="background:var(--blt);border:1px solid var(--bmd);border-radius:9px;padding:12px 18px;font-size:13px;color:var(--blue);margin-bottom:18px">
+      本次公司预测使用的"指标→最优模型"映射来自 Stage A 的 K={{evalRes.n_splits}} 折时间序列交叉验证
+    </div>
+
+    <div class="sumstat">
+      <div class="sumc">
+        <div class="lbl">行业CV最优MSE均值</div>
+        <div class="val">{{ evalAvgBestMse }}</div>
+        <div class="sub">K折CV · 选出后的 mean MSE 再求平均</div>
+      </div>
+      <div class="sumc">
+        <div class="lbl">公司预测MSE均值</div>
+        <div class="val">{{ predAvgMse }}</div>
+        <div class="sub">验证集 · 本次公司数据</div>
+      </div>
+      <div class="sumc">
+        <div class="lbl">模型多样性</div>
+        <div class="val">{{ uniqueModelsUsed }} / {{ evalRes.model_names.length }}</div>
+        <div class="sub">本次预测用到的不同模型数</div>
+      </div>
+    </div>
+
+    <div class="g2" style="margin-bottom:20px">
+      <div class="card" style="padding:22px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">指标 × 模型 MSE 热力图</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:14px">颜色越深 MSE 越高；= 该指标的最优模型</div>
+        <div id="cSelHeat" style="height:340px"></div>
+      </div>
+      <div class="card" style="padding:22px">
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">模型家族分布</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:14px">当前公司预测使用的模型构成</div>
+        <div id="cSelPie" style="height:340px"></div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+<!-- ═══ 浮动 AI 对话助手 (Stage D 激活时隐藏) ═══ -->
+<button class="chat-fab" v-if="!chatOpen && stage!=='chat'" @click="openChat" title="与 AI 财务助手对话">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  <span v-if="chatHasUnread" class="dotnew"></span>
+</button>
+
+<div v-if="chatOpen && stage!=='chat'" class="chat-panel">
+  <div class="chat-head">
+    <div>
+      <div class="ctitle">
+        <div class="cavatar">AI</div>
+        <div>
+          <div>慧估 AI 助手</div>
+          <div class="cdesc">DeepSeek · 携带预测 & 舆情上下文</div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-head-btns">
+      <button @click="clearChat" title="清空对话">🗑</button>
+      <button @click="chatOpen=false" title="关闭">✕</button>
+    </div>
+  </div>
+
+  <div class="chat-ctxbar">
+    <span class="ctxdot" :class="{off:!res.indicators}"></span>
+    <span>预测上下文：{{ res.indicators ? (selectedCompany || '行业') : '未加载' }}</span>
+    <span style="margin-left:8px">·</span>
+    <span class="ctxdot" :class="{off:!evalDone}"></span>
+    <span>选优：{{ evalDone ? 'K='+evalRes.n_splits : '未完成' }}</span>
+    <span style="margin-left:8px">·</span>
+    <span class="ctxdot" :class="{off:!sentAnalysis?.overall_sentiment}"></span>
+    <span>舆情：{{ sentAnalysis?.overall_sentiment ? (sentData.stock_code||'') : '未分析' }}</span>
+  </div>
+
+  <div class="chat-body" ref="chatBody">
+    <div class="chat-msg system-hint">
+      <div class="chat-bubble">👋 我是慧估 AI 助手，可以帮您解读预测结果、分析舆情、比较指标或回答财务问题。试试下面的快捷问题。</div>
+    </div>
+    <div v-for="(m,i) in chatMessages" :key="i" class="chat-msg" :class="m.role">
+      <div class="chat-av">{{ m.role==='user' ? '我' : 'AI' }}</div>
+      <div class="chat-bubble">{{ m.content }}</div>
+    </div>
+    <div v-if="chatSending" class="chat-msg assistant">
+      <div class="chat-av">AI</div>
+      <div class="chat-loading"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div class="chat-quick">
+    <button v-for="q in chatQuickPrompts" :key="q" @click="sendChat(q)" :disabled="chatSending">{{q}}</button>
+  </div>
+
+  <div class="chat-foot">
+    <textarea v-model="chatInput" @keydown.enter.exact.prevent="sendChat()" placeholder="问点什么…（Enter 发送，Shift+Enter 换行）" rows="1" :disabled="chatSending"></textarea>
+    <button class="chat-send" @click="sendChat()" :disabled="!chatInput.trim()||chatSending">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    </button>
+  </div>
+</div>
+
+<footer class="foot">慧估 Smart Prediction · 多模型 K折CV 选优 · 舆情情感分析 · AI 对话</footer>
+</div>
+
+<script>
+const {createApp,ref,computed,watch,nextTick,onMounted}=Vue;
+createApp({
+setup(){
+  // ═══ 原有状态 ═══
+  const step=ref(0),isDrag=ref(false),file=ref(null);
+  const submitting=ref(false),errMsg=ref(''),foreYrs=ref(3);
+  const aProg=ref(0),tab=ref('ov'),selI=ref(0);
+  const res=ref({});
+  const companies=ref([]);
+  const selectedCompany=ref('');
+
+  // ═══ 新增 Stage A 状态 ═══
+  const stage=ref('eval');        // 'eval' | 'pred' | 'sentiment'
+  const isDragE=ref(false);
+  const evalFile=ref(null);
+  const kFolds=ref(5);
+  const evaluating=ref(false);
+  const evalRes=ref({});          // 来自 /api/evaluate 的完整响应
+  const evalDone=computed(()=>!!(evalRes.value&&evalRes.value.best_models&&Object.keys(evalRes.value.best_models).length));
+
+  // ═══ 新增 Stage C 舆情分析状态 ═══
+  const sentStock=ref('');
+  const sentPages=ref(2);
+  const crawling=ref(false);
+  const analyzing=ref(false);
+  const sentData=ref({});         // 爬取结果 {stock_code, posts, news, ...}
+  const sentAnalysis=ref({});     // LLM 分析结果
+  const sentMeta=ref({});         // 元信息 {analyzed_at, total_posts}
+  const postSentMap=computed(()=>{
+    const m={};
+    (sentAnalysis.value?.per_post_sentiment||[]).forEach(it=>{ if(it&&it.index)m[it.index]=it; });
+    return m;
+  });
+
+  // ═══ 新增 AI 对话状态 ═══
+  const chatOpen=ref(false);
+  const chatInput=ref('');
+  const chatMessages=ref([]);     // [{role:'user'|'assistant', content:'...', time:'HH:MM'}]
+  const chatSending=ref(false);
+  const chatHasUnread=ref(false);
+  const chatBody=ref(null);       // 浮动面板
+  const dchatBody=ref(null);      // Stage D 主面板
+  const chatSessionId=ref('s_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));
+  const chatQuickPrompts=ref([
+    '继续深入',
+    '举个具体例子',
+    '换个角度分析',
+    '有什么风险?',
+    '总结要点',
+  ]);
+  const chatSuggestions=ref([
+    '这家公司未来盈利能力如何?',
+    '解读一下 ROE 的变化趋势',
+    '哪个预测指标置信度最高?',
+    '舆情对预测结果有影响吗?',
+    '总结投资亮点与风险',
+    '对比不同模型的选择逻辑',
+  ]);
+
+  const API = '/api';
+  const MODEL_COUNT = 5;
+
+  const indMeta=[
+    {name:'营业收入（同比增长率）',desc:'反映企业收入增长趋势'},
+    {name:'销售毛利率',desc:'衡量核心盈利能力'},
+    {name:'净资产收益率ROE',desc:'股东权益回报率'},
+    {name:'销售净利率',desc:'净利润与销售收入比率'},
+    {name:'总资产净利率ROA',desc:'资产利用效率指标'},
+    {name:'研发投入总额占营业收入比例',desc:'研发费用投入力度'},
+    {name:'总资产周转率',desc:'资产运营效率'},
+    {name:'权益乘数（杜邦分析）',desc:'财务杠杆水平'},
+  ];
+  const asteps=[
+    {name:'解析 xlsx，提取目标数据',t:20},
+    {name:'构建滑窗特征（8期+差分+趋势）',t:40},
+    {name:'按最优模型映射独立训练',t:75},
+    {name:'滚动多步预测（每步反归一化）',t:90},
+    {name:'生成报告数据',t:99},
+  ];
+
+  const indKeys=computed(()=>Object.keys(res.value.indicators||{}));
+
+  const fmtSize=b=>b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(2)+' MB';
+  const fv=v=>(v===null||v===undefined||isNaN(v))?'—':Number(v).toFixed(2);
+  const mseToConf=mse=>{if(!mse)return 70;return Math.max(10,Math.min(99,Math.round(95-Math.log10(mse+0.001)*20)))};
+
+  const getF=key=>{
+    const d=res.value.indicators?.[key];
+    return d?.fore?.[d.fore.length-1]??null;
+  };
+  const getH=key=>res.value.hist_last?.[key]??null;
+
+  // ═══ Stage B 文件处理 ═══
+  const onDrop=e=>{isDrag.value=false;const f=e.dataTransfer.files[0];if(f&&/\.xlsx?$/.test(f.name)){file.value=f;parseCompanies(f)}};
+  const onFile=e=>{const f=e.target.files[0];if(f){file.value=f;parseCompanies(f)}};
+
+  // ═══ Stage A 文件处理 ═══
+  const onDropEval=e=>{isDragE.value=false;const f=e.dataTransfer.files[0];if(f&&/\.xlsx?$/.test(f.name)){evalFile.value=f}};
+  const onFileEval=e=>{const f=e.target.files[0];if(f){evalFile.value=f}};
+
+  function parseCompanies(file){
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        const data=e.target.result;
+        const workbook=XLSX.read(data,{type:'binary'});
+        const firstSheetName=workbook.SheetNames[0];
+        const worksheet=workbook.Sheets[firstSheetName];
+        const jsonData=XLSX.utils.sheet_to_json(worksheet,{header:1});
+        if(jsonData.length>1){
+          const companyColumn=jsonData.slice(1).map(row=>row[1]).filter(c=>c&&typeof c==='string');
+          companies.value=[...new Set(companyColumn)];
+          selectedCompany.value=companies.value[0]||'';
+        }
+      }catch(err){console.error('解析公司列表失败:',err)}
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  // ═══ Stage A: 行业选优（跑K折CV） ═══
+  async function runEvaluate(){
+    if(!evalFile.value||evaluating.value)return;
+    errMsg.value='';evaluating.value=true;
+
+    try{
+      const fd=new FormData();
+      fd.append('file',evalFile.value);
+      fd.append('n_splits',String(kFolds.value));
+
+      const resp=await fetch(API+'/evaluate',{method:'POST',body:fd});
+      if(!resp.ok){
+        const txt=await resp.text();
+        throw new Error(`服务器错误 ${resp.status}: ${txt}`);
+      }
+      const json=await resp.json();
+      if(!json.ok)throw new Error(json.error||'未知错误');
+
+      evalRes.value=json.data;
+      // 若 Stage A 解析到了公司列表，顺便填充 Stage B 的公司下拉
+      if(json.data.companies&&json.data.companies.length){
+        companies.value=json.data.companies;
+        if(!selectedCompany.value)selectedCompany.value=companies.value[0];
+        // 若用户 Stage B 还没上传文件，自动复用 Stage A 文件
+        if(!file.value){file.value=evalFile.value}
+      }
+
+      // 渲染柱状图
+      nextTick(drawEvalChart);
+    }catch(e){
+      errMsg.value=' 行业选优失败：'+e.message+'（请确认后端 app.py 已启动）';
+    }finally{
+      evaluating.value=false;
+    }
+  }
+
+  // ═══ 重置预测状态，允许重新选择公司 ═══
+  function resetPrediction(){
+    step.value=0;
+    res.value={};
+  }
+
+  // ═══ 监听stage变化，当从pred切到其他阶段时不再重置预测状态（因为使用v-show保留状态） ═══
+  watch(()=>stage.value, (newStage, oldStage)=>{
+    // 不再重置状态，保持所有阶段的数据
+  });
+
+  // ═══ Stage B: 公司预测 ═══
+  async function submit(){
+    if(!file.value||submitting.value)return;
+    errMsg.value='';submitting.value=true;step.value=1;aProg.value=5;
+
+    let progTimer=setInterval(()=>{
+      if(aProg.value<90)aProg.value=Math.min(aProg.value+Math.random()*3,90);
+    },400);
+
+    try{
+      const fd=new FormData();
+      fd.append('file',file.value);
+      fd.append('years',String(foreYrs.value));
+      fd.append('company',selectedCompany.value);
+      // 若 Stage A 已完成，把最优模型映射传给后端
+      if(evalDone.value){
+        console.log('Stage A 已完成，使用最优模型映射:', evalRes.value.best_models);
+        fd.append('best_models',JSON.stringify(evalRes.value.best_models));
+      } else {
+        throw new Error('请先完成 Stage A（行业选优），为每个指标选择最优模型');
+      }
+
+      const resp=await fetch(API+'/predict',{method:'POST',body:fd});
+      clearInterval(progTimer);
+
+      if(!resp.ok){
+        const txt=await resp.text();
+        throw new Error(`服务器错误 ${resp.status}: ${txt}`);
+      }
+      const json=await resp.json();
+      if(!json.ok)throw new Error(json.error||'未知错误');
+
+      console.log('预测结果:', json.data);
+      aProg.value=100;
+      res.value=json.data;
+      setTimeout(()=>{step.value=2;tab.value='ov';nextTick(initOvCharts);generateReport();},500);
+
+    }catch(e){
+      clearInterval(progTimer);
+      step.value=0;submitting.value=false;
+      errMsg.value=' 预测失败：'+e.message+'（请确认后端 app.py 已启动：python app.py）';
+    }finally{
+      submitting.value=false;
+    }
+  }
+
+  // ═══ 导出 mapping JSON ═══
+  function dlMapping(){
+    if(!evalDone.value)return;
+    const payload={
+      generated_at:new Date().toISOString(),
+      n_splits:evalRes.value.n_splits,
+      n_companies:evalRes.value.n_companies,
+      best_models:evalRes.value.best_models,
+      model_labels:evalRes.value.model_labels,
+      indicators:Object.fromEntries(
+        Object.entries(evalRes.value.indicators).map(([k,v])=>[k,{
+          short:v.short,best_model:v.best_model,best_mse:v.best_mse,best_std:v.best_std,
+          per_model:Object.fromEntries(Object.entries(v.per_model).map(([m,r])=>[m,{mean_mse:r.mean_mse,std_mse:r.std_mse}]))
+        }])
+      ),
+      leaderboard:evalRes.value.leaderboard,
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`慧估_选优映射_K${evalRes.value.n_splits}.json`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),0);
+  }
+
+  // ═══ Chart helpers ═══
+  const ax={axisLine:{lineStyle:{color:'#e2e6f0'}},axisLabel:{color:'#7a89aa',fontSize:11},splitLine:{lineStyle:{color:'#f0f3fa'}}};
+  const tt={backgroundColor:'rgba(255,255,255,.97)',borderColor:'#e2e6f0',borderWidth:1,textStyle:{color:'#1a2340',fontSize:12},extraCssText:'box-shadow:0 4px 16px rgba(26,35,64,.10);border-radius:8px;padding:10px 14px'};
+  const MODEL_COLORS={LightGBM:'#2563eb',GBM:'#d97706',RandomForest:'#16a34a',Ridge:'#7c3aed',ElasticNet:'#0d9488'};
+  let charts={};
+  function gc(id){if(!charts[id]){const el=document.getElementById(id);if(!el)return null;charts[id]=echarts.init(el)}return charts[id]}
+  function mk(id,opt){const c=gc(id);if(c)c.setOption(opt,true)}
+
+  // ═══ Stage A MSE 对比柱状图 ═══
+  function drawEvalChart(){
+    if(!evalDone.value)return;
+    const d=evalRes.value;
+    const indKeyList=Object.keys(d.indicators);
+    const shortLabels=indKeyList.map(k=>d.indicators[k].short);
+    const series=d.model_names.map(m=>({
+      name:d.model_labels[m],
+      type:'bar',
+      data:indKeyList.map(k=>{
+        const v=d.indicators[k].per_model[m]?.mean_mse;
+        return v!==null&&v!==undefined?v:null;
+      }),
+      itemStyle:{color:MODEL_COLORS[m]||'#64748b'},
+      barGap:0.05,
+    }));
+    mk('cEval',{
+      backgroundColor:'transparent',
+      tooltip:{...tt,trigger:'axis',axisPointer:{type:'shadow'}},
+      legend:{top:0,textStyle:{color:'#7a89aa',fontSize:11},itemGap:12},
+      grid:{left:'3%',right:'4%',bottom:'3%',top:'36px',containLabel:true},
+      xAxis:{type:'category',data:shortLabels,...ax,axisLabel:{...ax.axisLabel,rotate:30,fontSize:10}},
+      yAxis:{type:'value',...ax,name:'MSE',nameTextStyle:{color:'#7a89aa',fontSize:11}},
+      series,
+    });
+  }
+
+  function buildSeries(name,histD,foreD,allL,color){
+    const hl=res.value.hist_labels?.length||0;
+    const hData=histD.concat(Array(allL.length-hl).fill(null));
+    const fData=[...Array(hl-1).fill(null),histD[histD.length-1],...foreD];
+    const bandU=[...Array(hl-1).fill(null),histD[histD.length-1],...foreD.map(v=>v!==null?v*1.05:null)];
+    const bandD=[...Array(hl-1).fill(null),histD[histD.length-1],...foreD.map(v=>v!==null?v*0.95:null)];
+    return[
+      {name:name+'(历史)',type:'line',smooth:true,data:hData,lineStyle:{color,width:2.5},itemStyle:{color},symbol:'none',areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:color+'28'},{offset:1,color:color+'05'}]}}},
+      {name:'CI上界',type:'line',smooth:true,data:bandU,lineStyle:{color:'transparent',width:0},itemStyle:{color:'transparent'},symbol:'none',showInLegend:false,areaStyle:{color:color+'12'}},
+      {name:'CI下界',type:'line',smooth:true,data:bandD,lineStyle:{color:'transparent',width:0},itemStyle:{color:'transparent'},symbol:'none',showInLegend:false,areaStyle:{color:'rgba(255,255,255,1)'}},
+      {name:name+'(预测)',type:'line',smooth:true,data:fData,lineStyle:{color,width:2,type:'dashed'},itemStyle:{color},symbol:'diamond',symbolSize:7},
+    ];
+  }
+
+  function getAllLabels(){return[...(res.value.hist_labels||[]),...(res.value.fore_labels||[])]}
+
+  function initOvCharts(){
+    const allL=getAllLabels();const intv=Math.floor(allL.length/8);
+    const base={backgroundColor:'transparent',tooltip:{...tt,trigger:'axis'},grid:{left:'3%',right:'4%',bottom:'3%',top:'38px',containLabel:true},xAxis:{type:'category',data:allL,...ax,axisLabel:{...ax.axisLabel,rotate:30,interval:intv}},yAxis:{type:'value',...ax,axisLabel:{...ax.axisLabel,formatter:'{value}%'}}};
+
+    const gm=res.value.indicators['销售毛利率'];const nm=res.value.indicators['销售净利率'];
+    if(gm&&nm){
+      mk('c1',{...base,legend:{top:0,textStyle:{color:'#7a89aa',fontSize:11}},series:[...buildSeries('毛利率',gm.hist,gm.fore,allL,'#2563eb'),...buildSeries('净利率',nm.hist,nm.fore,allL,'#0d9488')]});
+    }
+    const roe=res.value.indicators['净资产收益率ROE'];const roa=res.value.indicators['总资产净利率ROA'];
+    if(roe&&roa){
+      mk('c2',{...base,legend:{top:0,textStyle:{color:'#7a89aa',fontSize:11}},series:[...buildSeries('ROE',roe.hist,roe.fore,allL,'#7c3aed'),...buildSeries('ROA',roa.hist,roa.fore,allL,'#d97706')]});
+    }
+  }
+
+  function drawTrend(){
+    nextTick(()=>{
+      const key=indKeys.value[selI.value];if(!key)return;
+      const d=res.value.indicators[key];if(!d)return;
+      const allL=getAllLabels();const intv=Math.floor(allL.length/10);
+      const series=buildSeries(d.short,d.hist,d.fore,allL,'#1a2340');
+      series[3].lineStyle.color='#2563eb';series[3].itemStyle.color='#2563eb';
+      mk('c3',{backgroundColor:'transparent',tooltip:{...tt,trigger:'axis'},legend:{top:0,textStyle:{color:'#7a89aa',fontSize:11},data:[d.short+'(历史)',d.short+'(预测)']},grid:{left:'3%',right:'4%',bottom:'3%',top:'38px',containLabel:true},xAxis:{type:'category',data:allL,...ax,axisLabel:{...ax.axisLabel,rotate:30,interval:intv}},yAxis:{type:'value',...ax},series});
+    });
+  }
+
+  function initDpCharts(){
+    const allL=getAllLabels();const intv=Math.floor(allL.length/8);
+    const base={backgroundColor:'transparent',tooltip:{...tt,trigger:'axis'},legend:{top:0,textStyle:{color:'#7a89aa',fontSize:11}},grid:{left:'3%',right:'4%',bottom:'3%',top:'38px',containLabel:true},xAxis:{type:'category',data:allL,...ax,axisLabel:{...ax.axisLabel,rotate:30,interval:intv}},yAxis:{type:'value',...ax}};
+
+    const nm=res.value.indicators['销售净利率'];
+    const at=res.value.indicators['总资产周转率'];
+    const em=res.value.indicators['权益乘数（杜邦分析）'];
+    if(nm&&at&&em){
+      const s=[...buildSeries('净利率',nm.hist,nm.fore,allL,'#7c3aed'),...buildSeries('资产周转率',at.hist,at.fore,allL,'#0d9488'),...buildSeries('权益乘数',em.hist,em.fore,allL,'#d97706')];
+      mk('c4',{...base,series:s});
+    }
+    const roe=res.value.indicators['净资产收益率ROE'];
+    if(roe){
+      const allData=[...roe.hist.map((v,i)=>({value:v,itemStyle:{color:'#bfcffe'}})),...roe.fore.map(v=>({value:v,itemStyle:{color:'rgba(37,99,235,.7)'}}))];
+      mk('c5',{backgroundColor:'transparent',tooltip:{...tt,trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:'3%',right:'4%',bottom:'3%',top:'8px',containLabel:true},xAxis:{type:'category',data:allL,...ax,axisLabel:{...ax.axisLabel,rotate:30,interval:Math.floor(allL.length/10)}},yAxis:{type:'value',...ax,axisLabel:{...ax.axisLabel,formatter:'{value}%'}},series:[{type:'bar',data:allData,barWidth:'60%'}]});
+    }
+  }
+
+  function initMseCharts(){
+    const keys=indKeys.value;
+    const shorts=keys.map(k=>res.value.indicators[k]?.short);
+    const mses=keys.map(k=>res.value.indicators[k]?.train_mse??0);
+    mk('c6',{backgroundColor:'transparent',tooltip:{...tt,trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:'3%',right:'4%',bottom:'3%',top:'8px',containLabel:true},xAxis:{type:'value',...ax},yAxis:{type:'category',data:shorts.slice().reverse(),...ax,axisLabel:{...ax.axisLabel,fontSize:11}},series:[{type:'bar',data:mses.slice().reverse().map((v,i)=>({value:v,itemStyle:{color:v<1?'#16a34a':v<5?'#d97706':'#e11d48'}})),barWidth:'55%'}]});
+
+    const confScores=keys.slice(0,6).map(k=>mseToConf(res.value.indicators[k]?.train_mse));
+    mk('c7',{backgroundColor:'transparent',tooltip:{...tt},radar:{indicator:keys.slice(0,6).map((k,i)=>({name:res.value.indicators[k]?.short,max:100})),axisName:{color:'#7a89aa',fontSize:11},splitLine:{lineStyle:{color:'#e2e6f0'}},splitArea:{show:false},axisLine:{lineStyle:{color:'#e2e6f0'}}},series:[{type:'radar',data:[{value:confScores,name:'置信度',areaStyle:{color:'rgba(37,99,235,.08)'},lineStyle:{color:'#2563eb',width:2},itemStyle:{color:'#2563eb'}}]}]});
+  }
+
+  // ═══ 选优明细 Tab 图表 ═══
+  function initSelCharts(){
+    if(!evalDone.value)return;
+    const d=evalRes.value;
+    const keys=Object.keys(d.indicators);
+    const shorts=keys.map(k=>d.indicators[k].short);
+    const modelNames=d.model_names;
+
+    // 热力图：指标 × 模型
+    const heatData=[];
+    let vMin=Infinity,vMax=-Infinity;
+    keys.forEach((k,yi)=>{
+      modelNames.forEach((m,xi)=>{
+        const v=d.indicators[k].per_model[m]?.mean_mse;
+        if(v!==null&&v!==undefined){
+          heatData.push([xi,yi,Number(v.toFixed(4))]);
+          if(v<vMin)vMin=v; if(v>vMax)vMax=v;
+        }
+      });
+    });
+    // 标记最优
+    const bestMarks=keys.map((k,yi)=>{
+      const bm=d.indicators[k].best_model;
+      const xi=modelNames.indexOf(bm);
+      return xi>=0?[xi,yi]:null;
+    }).filter(Boolean);
+
+    mk('cSelHeat',{
+      backgroundColor:'transparent',
+      tooltip:{...tt,position:'top',formatter:p=>{
+        const ind=shorts[p.value[1]];const m=d.model_labels[modelNames[p.value[0]]];
+        return `<b>${ind}</b><br>${m}<br>MSE = ${p.value[2].toFixed(4)}`;
+      }},
+      grid:{left:'3%',right:'12%',bottom:'3%',top:'24px',containLabel:true},
+      xAxis:{type:'category',data:modelNames.map(m=>d.model_labels[m]),splitArea:{show:true},...ax,axisLabel:{...ax.axisLabel,rotate:30,fontSize:11}},
+      yAxis:{type:'category',data:shorts,splitArea:{show:true},...ax,axisLabel:{...ax.axisLabel,fontSize:11}},
+      visualMap:{min:vMin,max:vMax,calculable:true,orient:'vertical',right:0,top:'center',inRange:{color:['#e0f2fe','#bae6fd','#7dd3fc','#38bdf8','#0ea5e9','#0284c7','#0369a1','#075985']},textStyle:{color:'#7a89aa',fontSize:10}},
+      series:[
+        {name:'MSE',type:'heatmap',data:heatData,label:{show:true,fontSize:10,formatter:p=>{
+          // 根据数值大小调整显示格式
+          if(p.value[2] >= 1000) {
+            return p.value[2].toFixed(0);
+          } else if(p.value[2] >= 100) {
+            return p.value[2].toFixed(1);
+          } else {
+            return p.value[2].toFixed(2);
+          }
+        }},emphasis:{itemStyle:{shadowBlur:10,shadowColor:'rgba(0,0,0,.4)'}}},
+        {name:'最优',type:'scatter',data:bestMarks,symbol:'path://M12 2 L14.5 8.5 L22 9.2 L16.5 14 L18 21 L12 17.5 L6 21 L7.5 14 L2 9.2 L9.5 8.5 Z',symbolSize:12,itemStyle:{color:'#f59e0b',opacity:0.9},tooltip:{show:false}},
+      ],
+    });
+
+    // 饼图：本次公司预测用到的模型构成
+    const modelCount={};
+    indKeys.value.forEach(k=>{
+      const m=res.value.indicators[k]?.model;
+      if(m)modelCount[m]=(modelCount[m]||0)+1;
+    });
+    const pieData=Object.entries(modelCount).map(([m,c])=>({
+      name:d.model_labels[m]||m,value:c,itemStyle:{color:MODEL_COLORS[m]||'#64748b'}
+    }));
+    mk('cSelPie',{
+      backgroundColor:'transparent',
+      tooltip:{...tt,trigger:'item',formatter:'{b}: {c} 个指标 ({d}%)'},
+      legend:{orient:'vertical',right:0,top:'center',textStyle:{color:'#7a89aa',fontSize:11}},
+      series:[{
+        name:'模型构成',type:'pie',radius:['45%','72%'],center:['40%','50%'],avoidLabelOverlap:true,
+        itemStyle:{borderRadius:6,borderColor:'#fff',borderWidth:2},
+        label:{show:true,formatter:'{b}\n{c}',fontSize:11,color:'#1a2340'},
+        data:pieData
+      }]
+    });
+  }
+
+  function switchTab(t){
+    tab.value=t;
+    nextTick(()=>{
+      Object.values(charts).forEach(c=>{if(c)c.dispose()});
+      charts={};
+      if(t==='ov')initOvCharts();
+      if(t==='tr')drawTrend();
+      if(t==='dp')initDpCharts();
+      if(t==='ms')initMseCharts();
+      if(t==='sel')initSelCharts();
+    });
+  }
+
+  // ═══ 选优明细 computeds ═══
+  const evalAvgBestMse=computed(()=>{
+    if(!evalDone.value)return '—';
+    const vals=Object.values(evalRes.value.indicators).map(i=>i.best_mse).filter(v=>v!==null&&v!==undefined);
+    return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(4):'—';
+  });
+  const predAvgMse=computed(()=>{
+    if(!res.value.indicators)return '—';
+    const vals=Object.values(res.value.indicators).map(i=>i.train_mse).filter(v=>v!==null&&v!==undefined);
+    return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(4):'—';
+  });
+  const mseImprovePct=computed(()=>{
+    if(!evalDone.value)return 0;
+    const lb=evalRes.value.leaderboard||[];
+    const lgb=lb.find(x=>x.model==='LightGBM');
+    if(!lgb||lgb.avg_mse===null)return 0;
+    const bestAvg=Object.values(evalRes.value.indicators)
+      .map(i=>i.best_mse).filter(v=>v!==null&&v!==undefined);
+    if(!bestAvg.length)return 0;
+    const mean=bestAvg.reduce((a,b)=>a+b,0)/bestAvg.length;
+    return (lgb.avg_mse-mean)/lgb.avg_mse*100;
+  });
+  const uniqueModelsUsed=computed(()=>{
+    if(!res.value.indicators)return 0;
+    const set=new Set(Object.values(res.value.indicators).map(i=>i.model).filter(Boolean));
+    return set.size;
+  });
+
+
+
+  // Metric cards computed from real data
+  const metricCards=computed(()=>{
+    if(!res.value.indicators)return[];
+    const f=(key)=>res.value.fore_last?.[key]??0;
+    const h=(key)=>res.value.hist_last?.[key]??0;
+    return[
+      {cat:'盈利能力',tag:'核心',tc:'b',items:[
+        {lbl:'销售毛利率',val:f('销售毛利率'),hist:h('销售毛利率'),up:f('销售毛利率')>=h('销售毛利率'),unit:'%',scale:1},
+        {lbl:'销售净利率',val:f('销售净利率'),hist:h('销售净利率'),up:f('销售净利率')>=h('销售净利率'),unit:'%',scale:3},
+        {lbl:'营收增长率',val:f('营业收入（同比增长率）'),hist:h('营业收入（同比增长率）'),up:f('营业收入（同比增长率）')>=h('营业收入（同比增长率）'),unit:'%',scale:2},
+      ]},
+      {cat:'资本回报',tag:'杜邦',tc:'g',items:[
+        {lbl:'ROE',val:f('净资产收益率ROE'),hist:h('净资产收益率ROE'),up:f('净资产收益率ROE')>=h('净资产收益率ROE'),unit:'%',scale:4},
+        {lbl:'ROA',val:f('总资产净利率ROA'),hist:h('总资产净利率ROA'),up:f('总资产净利率ROA')>=h('总资产净利率ROA'),unit:'%',scale:6},
+      ]},
+      {cat:'运营效率',tag:'效率',tc:'',items:[
+        {lbl:'资产周转率',val:f('总资产周转率'),hist:h('总资产周转率'),up:f('总资产周转率')>=h('总资产周转率'),unit:'',scale:20},
+        {lbl:'权益乘数',val:f('权益乘数（杜邦分析）'),hist:h('权益乘数（杜邦分析）'),up:f('权益乘数（杜邦分析）')>=h('权益乘数（杜邦分析）'),unit:'',scale:10},
+      ]},
+      {cat:'研发投入',tag:'创新',tc:'',items:[
+        {lbl:'研发投入占比',val:f('研发投入总额占营业收入比例'),hist:h('研发投入总额占营业收入比例'),up:f('研发投入总额占营业收入比例')>=h('研发投入总额占营业收入比例'),unit:'%',scale:10}
+      ]},
+    ];
+  });
+
+  function dlCSV(){
+    if(!res.value.indicators)return;
+    const allL=getAllLabels();const hl=res.value.hist_labels?.length||0;
+    let csv='季度,'+indKeys.value.map(k=>res.value.indicators[k].short).join(',')+'\n';
+    allL.forEach((lbl,qi)=>{
+      const row=[lbl];
+      indKeys.value.forEach(k=>{
+        const d=res.value.indicators[k];
+        if(qi<hl){row.push(d.hist[qi]!==null?d.hist[qi].toFixed(4):'')}
+        else{row.push(d.fore[qi-hl]!==null?d.fore[qi-hl].toFixed(4):'')}
+      });
+      csv+=row.join(',')+'\n';
+    });
+    // 追加模型映射
+    csv+='\n#模型映射,\n';
+    indKeys.value.forEach(k=>{
+      const d=res.value.indicators[k];
+      csv+=`${d.short},${d.model_label||d.model||''}\n`;
+    });
+    const a=document.createElement('a');
+    a.href='data:text/csv;charset=utf-8,\ufeff'+encodeURIComponent(csv);
+    const companyName=selectedCompany.value||'行业';
+    a.download=`慧估_${companyName}_预测.csv`;a.click();
+  }
+
+  function reset(){
+    step.value=0;file.value=null;errMsg.value='';aProg.value=0;tab.value='ov';res.value={};
+    companies.value=[];selectedCompany.value='';
+    // 重置 Stage A 状态
+    evalFile.value=null;
+    evalRes.value={};
+    // 清空图表
+    Object.values(charts).forEach(c=>{if(c)c.dispose()});charts={};
+    // 清除旧的报告卡片
+    const oldReportTab = document.getElementById('ai-report-tab');
+    if (oldReportTab) {
+      oldReportTab.remove();
+    }
+    // 回到 Stage A
+    stage.value = 'eval';
+  }
+
+  // 在 submit 函数成功后调用报告生成 
+  async function generateReport() { 
+    if (!res.value) return; 
+    
+    try { 
+      const payload = { 
+        predict_data: res.value, 
+        eval_data: evalDone.value ? evalRes.value : {} 
+      }; 
+      
+      const response = await fetch(API + '/generate_report', { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(payload) 
+      }); 
+      
+      const json = await response.json(); 
+      if (json.ok) { 
+        // 显示AI报告 
+        showAIReport(json.data.report); 
+      } 
+    } catch (e) { 
+      console.error('生成报告失败:', e); 
+    } 
+  } 
+ 
+  function showAIReport(report) { 
+    // 创建一个新的报告选项卡 
+    const reportTab = document.createElement('div'); 
+    reportTab.id = 'ai-report-tab'; 
+    reportTab.innerHTML = ` 
+      <div class="card" style="padding:24px;margin-bottom:20px"> 
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px"> 
+          AI资产盈利能力预测报告 
+          <button class="btng" onclick="downloadReport()" style="float:right;margin-left:10px"> 
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/> 
+            </svg> 下载报告 
+          </button> 
+          <button class="btng" onclick="copyReport()" style="float:right"> 
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/> 
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/> 
+            </svg> 复制内容 
+          </button> 
+        </div> 
+        <div style="white-space:pre-line;line-height:1.8;font-size:14px;color:var(--ink2);padding:10px;background:var(--sur2);border-radius:8px;max-height:600px;overflow-y:auto;"> 
+          ${report} 
+        </div> 
+      </div> 
+    `; 
+    
+    // 在当前活动选项卡中插入报告 
+    const activeTabContent = document.querySelector('.wrap'); 
+    if (activeTabContent) { 
+      activeTabContent.appendChild(reportTab); 
+    } 
+  } 
+ 
+  function downloadReport() { 
+    const reportDiv = document.getElementById('ai-report-tab'); 
+    if (reportDiv) { 
+      const reportText = reportDiv.querySelector('div[style*="white-space:pre-line"]').textContent; 
+      const blob = new Blob([`# AI资产盈利能力预测报告\n\n${reportText}`], {type: 'text/plain'}); 
+      const a = document.createElement('a'); 
+      a.href = URL.createObjectURL(blob); 
+      a.download = `AI_资产盈利能力预测报告_${selectedCompany.value||'公司'}.txt`; 
+      a.click(); 
+      setTimeout(() => URL.revokeObjectURL(a.href), 0); 
+    } 
+  } 
+ 
+  function copyReport() { 
+    const reportDiv = document.getElementById('ai-report-tab'); 
+    if (reportDiv) { 
+      const reportText = reportDiv.querySelector('div[style*="white-space:pre-line"]').textContent; 
+      navigator.clipboard.writeText(reportText).then(() => { 
+        alert('报告内容已复制到剪贴板！'); 
+      }); 
+    } 
+  } 
+
+  // ═════════════════════════════════════════════════
+  //  Stage C: 舆情分析方法
+  // ═════════════════════════════════════════════════
+  async function doCrawl(){
+    if(!sentStock.value||crawling.value)return;
+    errMsg.value=''; crawling.value=true;
+    // 清空旧结果
+    sentData.value={}; sentAnalysis.value={}; sentMeta.value={};
+    try{
+      const resp=await fetch(API+'/crawl_guba',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          stock_code:sentStock.value.trim(),
+          pages:sentPages.value,
+          include_news:true,
+        }),
+      });
+      if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t}`);}
+      const json=await resp.json();
+      if(!json.ok)throw new Error(json.error||'未知错误');
+      sentData.value=json.data;
+    }catch(e){
+      errMsg.value='爬取失败：'+e.message;
+    }finally{
+      crawling.value=false;
+    }
+  }
+
+  async function doAnalyze(){
+    if(!sentData.value?.posts?.length||analyzing.value)return;
+    errMsg.value=''; analyzing.value=true;
+    try{
+      const resp=await fetch(API+'/analyze_posts',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          posts:sentData.value.posts,
+          news:sentData.value.news||[],
+          company:selectedCompany.value||sentData.value.stock_code,
+        }),
+      });
+      if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t}`);}
+      const json=await resp.json();
+      if(!json.ok)throw new Error(json.error||'未知错误');
+      sentAnalysis.value=json.data.analysis;
+      sentMeta.value={analyzed_at:json.data.analyzed_at,total_posts:json.data.total_posts};
+      nextTick(drawSentimentCharts);
+    }catch(e){
+      errMsg.value='LLM 情感分析失败：'+e.message;
+    }finally{
+      analyzing.value=false;
+    }
+  }
+
+  function sentColor(s){
+    return s==='positive'?'#16a34a':s==='negative'?'#e11d48':'#4338ca';
+  }
+  function sentScoreColor(v){
+    if(v==null)return 'var(--ink)';
+    if(v>=65)return '#16a34a';
+    if(v<=35)return '#e11d48';
+    return '#d97706';
+  }
+
+  function drawSentimentCharts(){
+    const a=sentAnalysis.value; if(!a||!a.overall_sentiment)return;
+    // 饼图
+    const pos=a.positive_count||0, neg=a.negative_count||0, neu=a.neutral_count||0;
+    mk('cSentPie',{
+      backgroundColor:'transparent',
+      tooltip:{...tt,trigger:'item',formatter:'{b}: {c} 条 ({d}%)'},
+      legend:{bottom:0,textStyle:{color:'#7a89aa',fontSize:11}},
+      series:[{
+        name:'情感分布', type:'pie', radius:['45%','72%'], center:['50%','45%'],
+        itemStyle:{borderRadius:6,borderColor:'#fff',borderWidth:2},
+        label:{show:true,formatter:'{b}\n{c}',fontSize:11,color:'#1a2340'},
+        data:[
+          {name:'正面',value:pos,itemStyle:{color:'#16a34a'}},
+          {name:'负面',value:neg,itemStyle:{color:'#e11d48'}},
+          {name:'中性',value:neu,itemStyle:{color:'#4338ca'}},
+        ],
+      }],
+    });
+    // 仪表
+    const score=a.sentiment_score||50;
+    mk('cSentGauge',{
+      backgroundColor:'transparent',
+      series:[{
+        type:'gauge', min:0, max:100,
+        startAngle:210, endAngle:-30,
+        progress:{show:true,width:16,itemStyle:{color:sentScoreColor(score)}},
+        axisLine:{lineStyle:{width:16,color:[[0.35,'#e11d48'],[0.65,'#d97706'],[1,'#16a34a']]}},
+        axisTick:{show:false},
+        splitLine:{length:10,lineStyle:{color:'#fff',width:2}},
+        axisLabel:{color:'#7a89aa',fontSize:10,distance:-24},
+        pointer:{length:'60%',width:4,itemStyle:{color:'#1a2340'}},
+        anchor:{show:true,size:14,itemStyle:{color:'#1a2340'}},
+        detail:{valueAnimation:true,formatter:'{value}',fontSize:26,color:'#1a2340',offsetCenter:[0,'75%']},
+        title:{offsetCenter:[0,'98%'],color:'#7a89aa',fontSize:11},
+        data:[{value:score,name:a.market_mood||'情感得分'}],
+      }],
+    });
+  }
+
+  function exportSentJson(){
+    if(!sentAnalysis.value?.overall_sentiment)return;
+    const payload={
+      stock_code:sentData.value.stock_code,
+      crawled_at:sentData.value.crawled_at,
+      analyzed_at:sentMeta.value.analyzed_at,
+      total_posts:sentData.value.posts_count,
+      total_news:sentData.value.news_count,
+      raw_posts:sentData.value.posts?.slice(0,50),
+      raw_news:sentData.value.news?.slice(0,30),
+      analysis:sentAnalysis.value,
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`慧估_舆情分析_${sentData.value.stock_code||'stock'}.json`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),0);
+  }
+
+  function askAIAboutSentiment(){
+    stage.value='chat';   // 跳转到 Stage D
+    nextTick(()=>{
+      sendChat('请基于刚刚完成的舆情分析结果，给我一个简要解读：当前市场情绪如何？有哪些关键风险与机会？如果已经做了预测，请结合预测结果一起讲。');
+    });
+  }
+
+  // ═════════════════════════════════════════════════
+  //  AI 对话助手方法
+  // ═════════════════════════════════════════════════
+  function openChat(){
+    chatOpen.value=true;
+    chatHasUnread.value=false;
+    nextTick(scrollChatToBottom);
+  }
+
+  function enterChatStage(){
+    stage.value='chat';
+    nextTick(scrollChatToBottom);
+  }
+
+  function scrollChatToBottom(){
+    // 同时滚动浮动面板 + Stage D 主面板
+    [chatBody.value, dchatBody.value].forEach(el=>{
+      if(el) el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  function _ts(){
+    const d=new Date();
+    return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+  }
+
+  async function sendChat(forcedText){
+    const msg=(forcedText||chatInput.value||'').trim();
+    if(!msg||chatSending.value)return;
+    chatInput.value='';
+    chatMessages.value.push({role:'user',content:msg,time:_ts()});
+    chatSending.value=true;
+    nextTick(scrollChatToBottom);
+
+    // 组装上下文
+    const context={};
+    if(res.value&&res.value.indicators)context.predict_data=res.value;
+    if(evalDone.value)context.eval_data=evalRes.value;
+    if(sentAnalysis.value?.overall_sentiment){
+      context.sentiment_data={analysis:sentAnalysis.value,stock_code:sentData.value.stock_code};
+    }
+
+    try{
+      const resp=await fetch(API+'/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          session_id:chatSessionId.value,
+          message:msg,
+          context,
+        }),
+      });
+      if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t}`);}
+      const json=await resp.json();
+      if(!json.ok)throw new Error(json.error||'未知错误');
+      chatMessages.value.push({role:'assistant',content:json.data.reply,time:_ts()});
+    }catch(e){
+      chatMessages.value.push({role:'assistant',content:'⚠ AI 回复失败：'+e.message+'\n\n请确认后端已启动且 DeepSeek API Key 有效。',time:_ts()});
+    }finally{
+      chatSending.value=false;
+      // 用户不在聊天界面时亮红点
+      if(!chatOpen.value && stage.value!=='chat') chatHasUnread.value=true;
+      nextTick(scrollChatToBottom);
+    }
+  }
+
+  async function clearChat(){
+    if(!chatMessages.value.length)return;
+    if(!confirm('确定要清空对话历史吗？'))return;
+    chatMessages.value=[];
+    try{
+      await fetch(API+'/chat/clear',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({session_id:chatSessionId.value}),
+      });
+    }catch(e){console.warn('清空历史失败：',e);}
+  }
+
+  function exportChat(){
+    if(!chatMessages.value.length)return;
+    const title='# 慧估 AI 对话记录\n\n';
+    const meta=`> 导出时间: ${new Date().toLocaleString('zh-CN')}  \n`
+             + `> 会话 ID: ${chatSessionId.value}  \n`
+             + `> 消息数: ${chatMessages.value.length}\n\n---\n\n`;
+    const body=chatMessages.value.map(m=>{
+      const who = m.role==='user' ? '🧑 **我**' : '🤖 **慧估 AI**';
+      const time = m.time ? ` _(${m.time})_` : '';
+      return `### ${who}${time}\n\n${m.content}\n`;
+    }).join('\n---\n\n');
+    const md = title + meta + body;
+    const blob=new Blob([md],{type:'text/markdown;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`慧估_AI对话_${new Date().toISOString().slice(0,10)}.md`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),0);
+  }
+
+  // 对话内容变化时自动滚动
+  watch(chatMessages,()=>nextTick(scrollChatToBottom),{deep:true});
+  // 切换到 Stage D 时清除未读
+  watch(stage,(v)=>{ if(v==='chat') chatHasUnread.value=false; });
+
+  onMounted(()=>{
+    window.addEventListener('resize',()=>Object.values(charts).forEach(c=>{if(c)c.resize()}));
+    // 暴露函数到全局作用域，以便通过onclick属性调用
+    window.downloadReport = downloadReport;
+    window.copyReport = copyReport;
+  });
+
+  return{
+    step,isDrag,file,submitting,errMsg,foreYrs,aProg,tab,selI,res,
+    indMeta,asteps,indKeys,metricCards,companies,selectedCompany,
+    fmtSize,fv,mseToConf,getF,getH,
+    onDrop,onFile,submit,switchTab,drawTrend,dlCSV,reset,parseCompanies,generateReport,showAIReport,downloadReport,copyReport,
+    // Stage A/B
+    stage,isDragE,evalFile,kFolds,evaluating,evalRes,evalDone,MODEL_COUNT,
+    onDropEval,onFileEval,runEvaluate,dlMapping,
+    evalAvgBestMse,predAvgMse,mseImprovePct,uniqueModelsUsed,
+    // Stage C: 舆情
+    sentStock,sentPages,crawling,analyzing,sentData,sentAnalysis,sentMeta,postSentMap,
+    doCrawl,doAnalyze,sentColor,sentScoreColor,exportSentJson,askAIAboutSentiment,
+    // Chat (Stage D + 浮动)
+    chatOpen,chatInput,chatMessages,chatSending,chatHasUnread,chatBody,dchatBody,
+    chatSessionId,chatQuickPrompts,chatSuggestions,
+    openChat,sendChat,clearChat,enterChatStage,exportChat,
+  };
+}
+}).mount('#app');
+</script>
+</body>
+</html>
